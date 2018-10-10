@@ -1,7 +1,0 @@
-# depslib dependency file v1.0
-1538591281 source:/home/abraham/Documents/PipesSignalsForks/main.cpp
-	<iostream>
-	<unistd.h>
-	<fcntl.h>
-	<sys/wait.h>
-

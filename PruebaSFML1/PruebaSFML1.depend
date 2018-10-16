@@ -849,7 +849,7 @@
 1539014064 source:/home/b/Documents/CodeBlocksProjects/AA1/EjemploInterfazSFML/PruebaSFML1/src/GraficoSFML.cpp
 	"GraficoSFML.h"
 
-1539013809 source:/home/b/Documents/SFMLgame/PruebaSFML1/main.cpp
+1539674672 source:/home/b/Documents/SFMLgame/PruebaSFML1/main.cpp
 	<iostream>
 	<SFML/Graphics.hpp>
 	<unistd.h>
@@ -1266,12 +1266,12 @@
 	<SFML/Graphics/Drawable.hpp>
 	<SFML/Window/GlResource.hpp>
 
-1539013669 /home/b/Documents/SFMLgame/PruebaSFML1/include/GraficoSFML.h
+1539675127 /home/b/Documents/SFMLgame/PruebaSFML1/include/GraficoSFML.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<iostream>
 	<string>
 
-1539014064 source:/home/b/Documents/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
+1539675120 source:/home/b/Documents/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
 	"GraficoSFML.h"
 

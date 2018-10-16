@@ -18,8 +18,6 @@ int main()
 {
     sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
 
-
-
     signal(SIGALRM,ClockAlarm);
     alarm(1);
 
@@ -44,9 +42,16 @@ int main()
                 if (event.mouseButton.button == sf::Mouse::Left)
                 {
                     graficos.MueveJugador(sf::Vector2f(event.mouseButton.x, event.mouseButton.y));
-                    int rd = rand() % 3;
-                    graficos.CogeComida(rd == 0 ?COMIDA_ROJA:rd ==1?COMIDA_AMARILLA:COMIDA_VERDE);
-                }
+
+                    for(int i = 1; i < 4; i++)
+                    {
+                        if (graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getGlobalBounds().contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)))
+                        {
+                            graficos.CogeComida(graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getFillColor());
+
+                        }
+                    }
+                    }
             }
         }
 

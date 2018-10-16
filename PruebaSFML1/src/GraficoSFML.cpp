@@ -164,7 +164,6 @@ void GraficoSFML::PonPedido(int _posicion, sf::Color _queComida)
 
 void GraficoSFML::CogeComida(sf::Color _queComida)
 {
-
     if (manoIzquierda.getFillColor() == PEDIDO_VACIO)
     {
         manoIzquierda.setFillColor(_queComida);

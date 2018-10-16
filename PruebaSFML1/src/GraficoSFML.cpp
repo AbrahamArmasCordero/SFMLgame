@@ -3,7 +3,7 @@
 GraficoSFML::GraficoSFML():posicionJugador(sf::Vector2f(385.f,285.f)),jugador(30.f)
 {
     //ctor
-    tiempoRestante = 10;
+    tiempoRestante = 180;
     numClientesRestantes = 5;
     font.loadFromFile("courier.ttf");
     aOrigenMesas.push_back(sf::Vector2f(120,85));
@@ -214,4 +214,4 @@ GraficoSFML::~GraficoSFML()
     //dtor
 }
 
-    tiempoRestante = 180;
+//    tiempoRestante = 180;

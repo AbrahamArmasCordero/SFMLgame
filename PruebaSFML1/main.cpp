@@ -50,7 +50,7 @@ int main()
     sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
 
     //llegada de clientes
-    if(son0 = fork() == 0){
+  /* if(son0 = fork() == 0){
 
         signal(SIGUSR1, TriggerAlarm);
         signal(SIGALRM, CargarCliente);
@@ -99,8 +99,7 @@ int main()
         if(son1 = fork()== 0){
 
         }
-        else{
-            sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
+        else{*/
             signal(SIGALRM,ClockAlarm);
             alarm(1);
 
@@ -169,8 +168,8 @@ int main()
             //esperar a todos los hijos
             //matarlos
             //exit
-        }
-    }
+       // }
+    //}
     return 0;
 }
 

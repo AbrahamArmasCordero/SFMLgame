@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 
+#define TABURETE_COMIENDO sf::Color::Blue
 #define TABURETE_VACIO sf::Color::White
 #define TABURETE_OCUPADO sf::Color::Magenta
 #define NUM_MESAS 3
@@ -36,6 +37,7 @@ class GraficoSFML
         sf::Vector2f posicionJugador;
 
         GraficoSFML();
+        bool TabureteComiendo(int posicion_);
         bool TabureteVacio(int _posicion);
         void OcupaTaburete(int _posicion);
         void VaciaTaburete(int _posicion);

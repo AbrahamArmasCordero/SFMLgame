@@ -7,8 +7,15 @@
 #include <wait.h>
 //
 #include <vector>
+#include <fstream>
+#include<sstream>
+#include <unistd.h>
 #include "GraficoSFML.h"
 #include <SFML/Graphics.hpp>
+
+
+#include "../XML/rapidxml.hpp"
+
 
 //constantes
 #define WINDOW_H 800
@@ -33,6 +40,35 @@ int main()
 {
     int statusPipeS0 = pipe(fdS0);
     if (statusPipeS0 <0) throw "error en pipe 1";
+    rapidxml::xml_document<> xmlFile;
+    std::ifstream file("config.xml");
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    file.close();
+    std::string content(buffer.str());
+    xmlFile.parse<0>(&content[0]);
+
+    rapidxml::xml_node<> *pRoot = xmlFile.first_node();
+
+    std::vector<sf::Color> pedidos;
+    for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
+    {
+        sf::Color newPedido;
+
+        for (rapidxml::xml_attribute<> *pAttr = pNode->first_attribute(); pAttr; pAttr = pAttr->next_attribute())
+        {
+            if(pAttr->name()[0] == 'R')
+                newPedido.r = std::atoi(pAttr->value());
+            else if(pAttr->name()[0] == 'G')
+                newPedido.g = std::atoi(pAttr->value());
+            else if(pAttr->name()[0] == 'B')
+                newPedido.b = std::atoi(pAttr->value());
+        }
+
+        pedidos.push_back(newPedido);
+    }
+
+    sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
 
     //llegada de clientes
     if(son0 = fork() == 0){

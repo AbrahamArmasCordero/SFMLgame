@@ -16,7 +16,6 @@
 
 #include "../XML/rapidxml.hpp"
 
-
 //constantes
 #define WINDOW_H 800
 #define WINDOW_V 600
@@ -26,9 +25,15 @@ static int fdS1[2];
 pid_t son1;
 pid_t son0;
 
+//pedidos de los clientes
+std::vector<sf::Color> pedidos;
+
+
 GraficoSFML graficos;
 // --- FUNCIONES
 void ClockAlarm(int param);
+
+void TriggerAlarm(int param);
 //se ejecuta cuando el hijo 0 recibe un SIGALRM (cada 5 segundos)
 void CargarCliente(int param);
 //se ejecuta cuando el hijo 2 recibe un SIGUSR2
@@ -40,43 +45,48 @@ int main()
 {
     int statusPipeS0 = pipe(fdS0);
     if (statusPipeS0 <0) throw "error en pipe 1";
-    rapidxml::xml_document<> xmlFile;
-    std::ifstream file("config.xml");
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    file.close();
-    std::string content(buffer.str());
-    xmlFile.parse<0>(&content[0]);
 
-    rapidxml::xml_node<> *pRoot = xmlFile.first_node();
-
-    std::vector<sf::Color> pedidos;
-    for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
-    {
-        sf::Color newPedido;
-
-        for (rapidxml::xml_attribute<> *pAttr = pNode->first_attribute(); pAttr; pAttr = pAttr->next_attribute())
-        {
-            if(pAttr->name()[0] == 'R')
-                newPedido.r = std::atoi(pAttr->value());
-            else if(pAttr->name()[0] == 'G')
-                newPedido.g = std::atoi(pAttr->value());
-            else if(pAttr->name()[0] == 'B')
-                newPedido.b = std::atoi(pAttr->value());
-        }
-
-        pedidos.push_back(newPedido);
-    }
 
     sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
 
     //llegada de clientes
     if(son0 = fork() == 0){
+
+        signal(SIGUSR1, TriggerAlarm);
+        signal(SIGALRM, CargarCliente);
+
+        rapidxml::xml_document<> xmlFile;
+        std::ifstream file("config.xml");
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        file.close();
+        std::string content(buffer.str());
+        xmlFile.parse<0>(&content[0]);
+
+        rapidxml::xml_node<> *pRoot = xmlFile.first_node();
+
+
+        for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
+        {
+            sf::Color newPedido;
+
+            for (rapidxml::xml_attribute<> *pAttr = pNode->first_attribute(); pAttr; pAttr = pAttr->next_attribute())
+            {
+                if(pAttr->name()[0] == 'R')
+                    newPedido.r = std::atoi(pAttr->value());
+                else if(pAttr->name()[0] == 'G')
+                    newPedido.g = std::atoi(pAttr->value());
+                else if(pAttr->name()[0] == 'B')
+                    newPedido.b = std::atoi(pAttr->value());
+            }
+
+            pedidos.push_back(newPedido);
+        }
         //escribe que cliente hay que dibujar
         while(1){
         //mirar el fdS0 a ver si hay sitio libre
         //if yes
-            signal(SIGALRM, CargarCliente);
+
         //else
             pause();
         }
@@ -168,6 +178,12 @@ void ClockAlarm(int param)
 {
     graficos.tiempoRestante--;
     alarm(1);
+}
+
+
+void TriggerAlarm(int param)
+{
+alarm(5);
 }
 
 void CargarCliente(int param){

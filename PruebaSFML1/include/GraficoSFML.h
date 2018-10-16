@@ -26,6 +26,7 @@ class GraficoSFML
         sf::RectangleShape manoDerecha;
 
         std::vector<sf::RectangleShape> aObjetosADibujar;
+
         std::vector<sf::Text> aTextosADibujar;
         sf::CircleShape aTaburetesADibujar[NUM_MESAS];
         sf::RectangleShape aPedidosADibujar[NUM_MESAS];

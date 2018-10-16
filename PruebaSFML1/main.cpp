@@ -43,14 +43,14 @@ int main()
                 {
                     graficos.MueveJugador(sf::Vector2f(event.mouseButton.x, event.mouseButton.y));
 
-                    for(int i = 1; i < 4; i++)
-                    {
-                        if (graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getGlobalBounds().contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)))
+                        for(int i = 1; i < 4; i++)
                         {
-                            graficos.CogeComida(graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getFillColor());
+                            if (graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getGlobalBounds().contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)))
+                            {
+                                graficos.CogeComida(graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getFillColor());
 
+                            }
                         }
-                    }
                     }
             }
         }

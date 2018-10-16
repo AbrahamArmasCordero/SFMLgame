@@ -113,7 +113,12 @@ int main()
 
             while(window.isOpen())
             {
+                //VARIABLES
                 sf::Event event;
+                bool mouseLeftButtPressed = false;
+
+                //EVENTOS
+
                 while(window.pollEvent(event))
                 {
                     if (event.type == sf::Event::Closed)
@@ -131,7 +136,17 @@ int main()
                     {
                         if (event.mouseButton.button == sf::Mouse::Left)
                         {
-                            graficos.MueveJugador(sf::Vector2f(event.mouseButton.x, event.mouseButton.y));
+                            mouseLeftButtPressed = true;
+                        }
+                    }
+                }
+
+                //UPDATE
+
+                {
+                    if(mouseLeftButtPressed)
+                    {
+                        graficos.MueveJugador(sf::Vector2f(event.mouseButton.x, event.mouseButton.y));
 
                             for(int i = 1; i < 4; i++)
                             {
@@ -141,9 +156,25 @@ int main()
 
                                 }
                             }
-                        }
+                            for(int i = 0; i < 3; i++)
+                            {
+                                if(graficos.aTaburetesADibujar[i].getGlobalBounds().contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)) && graficos.TabureteOcupado(i))
+                                {
+                                    if(graficos.manoDerecha.getFillColor() == graficos.aPedidosADibujar.getFillColor() || graficos.manoIzquierda.getFillColor() == graficos.aPedidosADibujar.getFillColor())
+                                    {
+
+                                    }
+
+                                }
+                            }
+                            mouseLeftButtPressed = false;
                     }
                 }
+
+
+                //DRAW
+
+                {
 
                 window.clear(sf::Color(200,200,200,255));
 
@@ -169,6 +200,8 @@ int main()
                 window.draw(graficos.manoDerecha);
 
                 window.display();
+
+                }
 
                 if (graficos.tiempoRestante <= 0)
                 window.close();

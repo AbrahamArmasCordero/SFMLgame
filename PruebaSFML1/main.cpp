@@ -33,12 +33,22 @@ int main()
 
     rapidxml::xml_node<> *pRoot = xmlFile.first_node();
 
-    std::cout << pRoot->name() << std::endl;
-
-    for(rapidxml::xml_node<> *pNode = pRoot->first_node();
-    pNode; pNode = pNode->next_sibling())
+    std::vector<sf::Color> pedidos;
+    for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
     {
-        //std::cout << pNode->name() << std::endl;
+        sf::Color newPedido;
+
+        for (rapidxml::xml_attribute<> *pAttr = pNode->first_attribute(); pAttr; pAttr = pAttr->next_attribute())
+        {
+            if(pAttr->name()[0] == 'R')
+                newPedido.r = std::atoi(pAttr->value());
+            else if(pAttr->name()[0] == 'G')
+                newPedido.g = std::atoi(pAttr->value());
+            else if(pAttr->name()[0] == 'B')
+                newPedido.b = std::atoi(pAttr->value());
+        }
+
+        pedidos.push_back(newPedido);
     }
 
     sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);

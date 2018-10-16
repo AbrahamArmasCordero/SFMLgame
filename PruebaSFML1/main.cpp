@@ -20,21 +20,23 @@
 #define WINDOW_H 800
 #define WINDOW_V 600
 #define TITLE "Mi super practica 1.1"
-static int fdS0[2]; // 0 lectura, 1escritura
-static int fdS1[2];
+
+int fdS0[2]; // 0 lectura, 1escritura
+int fdS1[2];
 pid_t son1;
 pid_t son0;
 
 //pedidos de los clientes
 std::vector<sf::Color> pedidos;
-
-
 GraficoSFML graficos;
+
 // --- FUNCIONES
 void ClockAlarm(int param);
 
+//se triggerea cuando tiene un sitio libre
 void TriggerAlarm(int param);
-//se ejecuta cuando el hijo 0 recibe un SIGALRM (cada 5 segundos)
+
+//se ejecuta cuando el hijo 0 recibe un SIGALRM
 void CargarCliente(int param);
 //se ejecuta cuando el hijo 2 recibe un SIGUSR2
 void UnLoadClient(int param);
@@ -50,7 +52,7 @@ int main()
     sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
 
     //llegada de clientes
-  /* if(son0 = fork() == 0){
+    if(son0 = fork() == 0){
 
         signal(SIGUSR1, TriggerAlarm);
         signal(SIGALRM, CargarCliente);
@@ -93,13 +95,19 @@ int main()
         exit(0);
 
     }else {
-    //control de vaciado de clientes
+
         int statusPipeS1 = pipe(fdS1);
         if (statusPipeS1 <0) throw "error en pipe 2";
-        if(son1 = fork()== 0){
 
+    //control de vaciado de clientes
+        if(son1 = fork() == 0){
+
+            while(1){
+            pause();
+            }
+            exit(0);
         }
-        else{*/
+        else{
             signal(SIGALRM,ClockAlarm);
             alarm(1);
 
@@ -125,15 +133,15 @@ int main()
                         {
                             graficos.MueveJugador(sf::Vector2f(event.mouseButton.x, event.mouseButton.y));
 
-                                for(int i = 1; i < 4; i++)
+                            for(int i = 1; i < 4; i++)
+                            {
+                                if (graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getGlobalBounds().contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)))
                                 {
-                                    if (graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getGlobalBounds().contains(sf::Vector2f(event.mouseButton.x, event.mouseButton.y)))
-                                    {
-                                        graficos.CogeComida(graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getFillColor());
+                                    graficos.CogeComida(graficos.aObjetosADibujar[graficos.aObjetosADibujar.size() - i].getFillColor());
 
-                                    }
                                 }
                             }
+                        }
                     }
                 }
 
@@ -168,8 +176,8 @@ int main()
             //esperar a todos los hijos
             //matarlos
             //exit
-       // }
-    //}
+       }
+    }
     return 0;
 }
 

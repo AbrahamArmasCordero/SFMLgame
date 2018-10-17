@@ -38,19 +38,18 @@ std::vector<sf::Color> pedidos;
 // --- FUNCIONES
 void ClockAlarm(int param);
 
-//se triggerea cuando tiene un sitio libre
+//se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
 void TriggerAlarm(int param);
 
 //se ejecuta cuando el hijo 0 recibe un SIGALRM
 void CargarCliente(int param);
+//codigo string de los clientes "color,sitio"
 
 //se ejecuta cuando el hijo 2 recibe un SIGUSR2
 std::queue<int> TabureteComiendo = std::queue<int>();
 
-void UnLoadClient(int param);
 void UnLoadWhatClient(int param);
-
-//codigo string de los clientes "color,sitio"
+void UnLoadClient(int param);
 
 int main()
 {
@@ -101,10 +100,9 @@ int main()
 
     /// --- CLIENTES COMIENDO ---
         if(son1 = fork() == 0){
-        //recibo señal SIGUSR2
-        //leo mi fdP2
-        //pongo a true el asiento ocupado
-        //checkear si tengo mas asientos ocupados
+        //recibo señal SIGUSR2 DONE
+        //leo mi fdP2 DONE
+        //almaceno el asiento ocupado DONE
         //espero 5 segundos
         //vaciar un asiento
         //vuelta al loop o pausa
@@ -221,7 +219,10 @@ void UnLoadWhatClient(int param)
 }
 void UnLoadClient (int param)
 {
-    write(fdS1[1],TabureteComiendo.front(),1);
+    char* n = std::to_string(TabureteComiendo.front()).c_str();
+
+    write(fdS1[1],n,1);
+
     TabureteComiendo.pop();
-    kill(getppid(), SIGUSR2)
+    kill(getppid(), SIGUSR2);
 }

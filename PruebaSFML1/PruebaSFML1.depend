@@ -1287,10 +1287,10 @@
 	<new>
 	<exception>
 
-1539686287 source:/home/abraham/Documents/AA1/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
+1539694295 source:/home/abraham/Documents/AA1/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
 	"GraficoSFML.h"
 
-1539679532 /home/abraham/Documents/AA1/SFMLgame/PruebaSFML1/include/GraficoSFML.h
+1539694231 /home/abraham/Documents/AA1/SFMLgame/PruebaSFML1/include/GraficoSFML.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<iostream>
@@ -1705,7 +1705,7 @@
 	<SFML/Graphics/Drawable.hpp>
 	<SFML/Window/GlResource.hpp>
 
-1539687032 source:/home/abraham/Documents/AA1/SFMLgame/PruebaSFML1/main.cpp
+1539693893 source:/home/abraham/Documents/AA1/SFMLgame/PruebaSFML1/main.cpp
 	<iostream>
 	<unistd.h>
 	<fcntl.h>

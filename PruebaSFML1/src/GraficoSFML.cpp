@@ -3,10 +3,10 @@
 GraficoSFML::GraficoSFML():posicionJugador(sf::Vector2f(385.f,285.f)),jugador(30.f)
 {
     //ctor
-    tiempoRestante = 60;
+    tiempoRestante = 180;
     numClientesRestantes = 5;
     font.loadFromFile("courier.ttf");
-    aOrigenMesas.push_back(sf::Vector2f(120,85));
+    aOrigenMesas.push_back(sf::Vector2f(120,84));
     aOrigenMesas.push_back(sf::Vector2f(120,255));
     aOrigenMesas.push_back(sf::Vector2f(120,425));
 
@@ -130,6 +130,15 @@ void GraficoSFML::InitObjetosFijos()
     aObjetosADibujar.push_back(comidaDispensadorShape);
 
 
+}
+bool GraficoSFML::TabureteComiendo(int posicion_)
+{
+    sf::Color color = aTaburetesADibujar[posicion_].getFillColor();
+    if (color == TABURETE_COMIENDO)
+    {
+        return true;
+    }
+    return false;
 }
 
 bool GraficoSFML::TabureteVacio(int _posicion)

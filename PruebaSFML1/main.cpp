@@ -1,4 +1,10 @@
+#pragma once
 #include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <queue>
 
 //temario
 #include <unistd.h>
@@ -6,13 +12,9 @@
 #include <sys/wait.h>
 #include <wait.h>
 //
-#include <vector>
-#include <fstream>
-#include<sstream>
-#include <unistd.h>
+
 #include "GraficoSFML.h"
 #include <SFML/Graphics.hpp>
-
 
 #include "../XML/rapidxml.hpp"
 
@@ -21,37 +23,40 @@
 #define WINDOW_V 600
 #define TITLE "Mi super practica 1.1"
 
+#define MAX_BUFFER_SIZE 5
+
 int fdS0[2]; // 0 lectura, 1escritura
 int fdS1[2];
 pid_t son1;
 pid_t son0;
 
+
+GraficoSFML graficos;
 //pedidos de los clientes
 std::vector<sf::Color> pedidos;
-GraficoSFML graficos;
 
 // --- FUNCIONES
 void ClockAlarm(int param);
 
-//se triggerea cuando tiene un sitio libre
+//se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
 void TriggerAlarm(int param);
 
 //se ejecuta cuando el hijo 0 recibe un SIGALRM
 void CargarCliente(int param);
-//se ejecuta cuando el hijo 2 recibe un SIGUSR2
-void UnLoadClient(int param);
-
 //codigo string de los clientes "color,sitio"
+
+//se ejecuta cuando el hijo 2 recibe un SIGUSR2
+std::queue<int> TabureteComiendo = std::queue<int>();
+
+void UnLoadWhatClient(int param);
+void UnLoadClient(int param);
 
 int main()
 {
     int statusPipeS0 = pipe(fdS0);
     if (statusPipeS0 <0) throw "error en pipe 1";
 
-
-    sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
-
-    //llegada de clientes
+    /// --- LLEGADA DE CLIENTES ---
     if(son0 = fork() == 0){
 
         signal(SIGUSR1, TriggerAlarm);
@@ -84,14 +89,8 @@ int main()
 
             pedidos.push_back(newPedido);
         }
-        //escribe que cliente hay que dibujar
-        while(1){
-        //mirar el fdS0 a ver si hay sitio libre
-        //if yes
 
-        //else
-            pause();
-        }
+        while(1){ pause(); }
         exit(0);
 
     }else {
@@ -99,16 +98,26 @@ int main()
         int statusPipeS1 = pipe(fdS1);
         if (statusPipeS1 <0) throw "error en pipe 2";
 
-    //control de vaciado de clientes
+    /// --- CLIENTES COMIENDO ---
         if(son1 = fork() == 0){
+        //recibo señal SIGUSR2 DONE
+        //leo mi fdP2 DONE
+        //almaceno el asiento ocupado DONE
+        //espero 5 segundos
+        //vaciar un asiento
+        //vuelta al loop o pausa
+            signal(SIGALRM, UnLoadClient);
+            signal(SIGUSR2, UnLoadWhatClient);
 
-            while(1){
-            pause();
-            }
+            while(1){ pause(); }
+
             exit(0);
         }
         else{
+            sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
+
             signal(SIGALRM,ClockAlarm);
+            ///signal(SIGUSR2, /*funcion hijo 1*/)
             alarm(1);
 
             while(window.isOpen())
@@ -187,20 +196,33 @@ void ClockAlarm(int param)
     alarm(1);
 }
 
-
 void TriggerAlarm(int param)
 {
 alarm(5);
 }
 
-void CargarCliente(int param){
+void CargarCliente(int param)
+{
 //Acceso a los clientes predeterminados
 //vaciar el fdS0 y escribir la info del nuevo cliente
 //mandar SIGUSR1 al padre
 }
 
-void UnLoadClient(int param){
-//alarm(5)
-//mandar SIGUSR2 al padre
+void UnLoadWhatClient(int param)
+{
+    char buffer[MAX_BUFFER_SIZE];
+    size_t t = read(fdS1[0],buffer, MAX_BUFFER_SIZE);
+    buffer[t] = '\0';
+    int n = std::stoi(buffer);
+    TabureteComiendo.push(n);
+    alarm(5);
+}
+void UnLoadClient (int param)
+{
+    char* n = std::to_string(TabureteComiendo.front()).c_str();
 
+    write(fdS1[1],n,1);
+
+    TabureteComiendo.pop();
+    kill(getppid(), SIGUSR2);
 }

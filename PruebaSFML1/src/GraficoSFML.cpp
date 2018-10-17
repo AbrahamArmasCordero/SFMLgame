@@ -14,6 +14,10 @@ GraficoSFML::GraficoSFML():posicionJugador(sf::Vector2f(385.f,285.f)),jugador(30
     aOrigenDispensadores.push_back(sf::Vector2f(650, 255));
     aOrigenDispensadores.push_back(sf::Vector2f(650, 425));
 
+    stoolState[0] = false;
+    stoolState[1] = false;
+    stoolState[2] = false;
+
     InitContadorClientes();
     InitContadorTiempo();
     InitTaburetes();
@@ -151,6 +155,16 @@ bool GraficoSFML::TabureteVacio(int _posicion)
     return false;
 }
 
+bool GraficoSFML::TabureteOcupado(int _posicion)
+{
+    sf::Color color = aTaburetesADibujar[_posicion].getFillColor();
+    if(color == TABURETE_OCUPADO)
+    {
+        return true;
+    }
+    return false;
+}
+
 void GraficoSFML::OcupaTaburete(int _posicion)
 {
     aTaburetesADibujar[_posicion].setFillColor(TABURETE_OCUPADO);
@@ -170,6 +184,8 @@ void GraficoSFML::PonPedido(int _posicion, sf::Color _queComida)
 {
     aPedidosADibujar[_posicion].setFillColor(_queComida);
 }
+
+//bool GraficoSFML
 
 void GraficoSFML::CogeComida(sf::Color _queComida)
 {
@@ -198,6 +214,18 @@ bool GraficoSFML::DejaComida(sf::Color _queComida)
         return true;
     }
     return false;
+}
+
+void GraficoSFML::TiraComida()
+{
+    if(manoDerecha.getFillColor() != PEDIDO_VACIO)
+    {
+        manoDerecha.setFillColor(PEDIDO_VACIO);
+    }
+    else if (manoIzquierda.getFillColor() != PEDIDO_VACIO)
+    {
+        manoIzquierda.setFillColor(PEDIDO_VACIO);
+    }
 }
 
  void GraficoSFML::MueveJugador(sf::Vector2f _posicion)

@@ -1,4 +1,3 @@
-#pragma once
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -33,7 +32,7 @@ pid_t son0;
 
 GraficoSFML graficos;
 //pedidos de los clientes
-std::vector<sf::Color> pedidos;
+std::queue<sf::Color> pedidos;
 
 // --- FUNCIONES
 void ClockAlarm(int param);
@@ -87,7 +86,7 @@ int main()
                     newPedido.b = std::atoi(pAttr->value());
             }
 
-            pedidos.push_back(newPedido);
+            pedidos.push(newPedido);
         }
 
         while(1){ pause(); }
@@ -198,14 +197,27 @@ void ClockAlarm(int param)
 
 void TriggerAlarm(int param)
 {
-alarm(5);
+    alarm(5);
 }
 
 void CargarCliente(int param)
 {
-//Acceso a los clientes predeterminados
-//vaciar el fdS0 y escribir la info del nuevo cliente
-//mandar SIGUSR1 al padre
+    char* n;
+    if (pedidos.size())
+    {
+        std::string rgb = std::to_string(pedidos.front().r) + ',' + std::to_string(pedidos.front().g) + ',' +std::to_string(pedidos.front().b);
+        n = rgb.c_str();
+        write(fdS0[1],n,1);
+
+        pedidos.pop();
+    }
+    else
+    {
+        n = '0';
+        write(fdS0[1],n,1);
+    }
+
+    kill(getppid(), SIGUSR1);
 }
 
 void UnLoadWhatClient(int param)

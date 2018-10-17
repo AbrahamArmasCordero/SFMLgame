@@ -33,10 +33,14 @@ class GraficoSFML
 
         int tiempoRestante;
         int numClientesRestantes;
+        bool stoolState[3];
         sf::Vector2f posicionJugador;
 
         GraficoSFML();
+        //void DrawClient(sf::Color color);
+        //int firstStoolFree();
         bool TabureteVacio(int _posicion);
+        bool TabureteOcupado(int);
         void OcupaTaburete(int _posicion);
         void VaciaTaburete(int _posicion);
 
@@ -47,6 +51,7 @@ class GraficoSFML
 
         //Retorna false si la comida que tiene que dejar no la tiene en ninguna de las dos manos.
         bool DejaComida(sf::Color _queComida);
+        void TiraComida();
 
         void MueveJugador(sf::Vector2f _posicion);
         virtual ~GraficoSFML();

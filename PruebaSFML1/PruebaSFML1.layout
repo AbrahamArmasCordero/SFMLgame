@@ -4,17 +4,21 @@
 	<ActiveTarget name="Debug" />
 	<File name="include/GraficoSFML.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="691" topLine="23" />
+			<Cursor1 position="1006" topLine="11" />
 		</Cursor>
 	</File>
-	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="3" zoom_2="0">
+	<File name="main.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="1" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2624" topLine="93" />
+			<Cursor1 position="8738" topLine="260" />
 		</Cursor>
+		<Folding>
+			<Collapse line="278" />
+			<Collapse line="284" />
+		</Folding>
 	</File>
 	<File name="src/GraficoSFML.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1399" topLine="0" />
+			<Cursor1 position="659" topLine="18" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

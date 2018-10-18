@@ -107,12 +107,12 @@ int main()
 
     /// --- CLIENTES COMIENDO ---
         if((son2 = fork()) == 0){
-        //recibo señal SIGUSR2 DONE
-        //leo mi fdP2 DONE
-        //almaceno el asiento ocupado DONE
-        //espero 5 segundos
-        //vaciar un asiento
-        //vuelta al loop o pausa
+            //recibo señal SIGUSR2 DONE
+            //leo mi fdP2 DONE
+            //almaceno el asiento ocupado DONE
+            //espero 5 segundos
+            //vaciar un asiento
+            //vuelta al loop o pausa
             signal(SIGALRM, UnLoadClient);
             signal(SIGUSR2, UnLoadWhatClient);
 
@@ -328,7 +328,6 @@ void CargarClienteSon(int param)
     }
 }
 
-
 void CargarClienteFath(int param){
 //SIG1
 
@@ -364,17 +363,26 @@ void CargarClienteFath(int param){
 }
 
 /// --- HIJO 2 ---
+
 void UnLoadWhatClient(int param)
 {
+    pid_t pid;
     char* buffer = new char[MAX_BUFFER_S2];
     size_t t = read(fdS2[0],buffer, MAX_BUFFER_S2);
     buffer[t] = '\0';
 
     int n = std::stoi(buffer);
     TabureteComiendo.push(n);
-    std::cout<< "ESTOY CONTANDO PUTO: " << buffer <<"\n";
-    alarm(TIME_TODO);
+
+    if(pid = fork() == 0)
+    {
+        sleep(5);
+        kill(getppid(), SIGALRM);
+        exit(0);
+    }
+
 }
+
 void UnLoadClient (int param)
 {
     char* buffer = new char[MAX_BUFFER_S2];
@@ -384,7 +392,6 @@ void UnLoadClient (int param)
 
     TabureteComiendo.pop();
     kill(getppid(), SIGUSR2);
-    std::cout<< "HE AVISADO HIJOPUTA: " << buffer <<"\n";
 }
 
 /// --- PADRE ---

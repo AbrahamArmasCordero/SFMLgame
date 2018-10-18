@@ -22,45 +22,41 @@
 #define WINDOW_V 600
 #define TITLE "Mi super practica 1.1"
 
-#define MAX_BUFFER_SIZE 5
+#define MAX_BUFFER_RGB 9
+#define MAX_BUFFER_S2 3
 
-int fdS0[2]; // 0 lectura, 1escritura
-int fdS1[2];
+int fdS1[2]; // 0 lectura, 1escritura
+int fdS2[2];
+pid_t son2;
 pid_t son1;
-pid_t son0;
 
+/// --- HIJO 1 ---
+std::queue<sf::Color> pedidos; //pedidos de los clientes
 
-GraficoSFML graficos;
-//pedidos de los clientes
-std::queue<sf::Color> pedidos;
-
-// --- FUNCIONES
-void ClockAlarm(int param);
-
-//se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
-void TriggerAlarm(int param);
-
-//se ejecuta cuando el hijo 0 recibe un SIGALRM
-void CargarClienteSon(int param);
+void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
 void CargarClienteFath(int param);
-//codigo string de los clientes "color,sitio"
 
-//se ejecuta cuando el hijo 2 recibe un SIGUSR2
-std::queue<int> TabureteComiendo = std::queue<int>();
+/// --- HIJO 2 ---
+std::queue<int> TabureteComiendo = std::queue<int>();//se ejecuta cuando el hijo 2 recibe un SIGUSR2
 
 void UnLoadWhatClient(int param);
 void UnLoadClient(int param);
-//Se ejecuta cuando el hijo
-int firstStoolFree();
+
+/// --- PADRE ---
+GraficoSFML graficos;
+
+void ClockAlarm(int param); //se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
+void TriggerAlarm(int param);
+int FirstStoolFree();
+void DrawClient(sf::Color color);
 
 int main()
 {
-    int statusPipeS0 = pipe(fdS0);
+    int statusPipeS0 = pipe(fdS1);
     if (statusPipeS0 <0) throw "error en pipe 1";
 
     /// --- LLEGADA DE CLIENTES ---
-    /// --- LLEGADA DE CLIENTES ---
-    if((son0 = fork()) == 0){
+    if((son1 = fork()) == 0){
 
         signal(SIGUSR1, TriggerAlarm);
         signal(SIGALRM, CargarClienteSon);
@@ -94,15 +90,16 @@ int main()
         }
 
         while(1){ pause(); }
+
         exit(0);
 
     }else {
 
-        int statusPipeS1 = pipe(fdS1);
+        int statusPipeS1 = pipe(fdS2);
         if (statusPipeS1 <0) throw "error en pipe 2";
 
     /// --- CLIENTES COMIENDO ---
-        if((son1 = fork()) == 0){
+        if((son2 = fork()) == 0){
         //recibo señal SIGUSR2 DONE
         //leo mi fdP2 DONE
         //almaceno el asiento ocupado DONE
@@ -121,11 +118,9 @@ int main()
 
             signal(SIGALRM,ClockAlarm);
             signal(SIGUSR1, CargarClienteFath);
-            ///signal(SIGUSR2, /*funcion hijo 1*/)
             alarm(1);
 
-             //VARIABLES
-
+            //VARIABLES
             sf::Event event;
 
             bool mouseLeftButtPressed = false;
@@ -136,11 +131,7 @@ int main()
 
             while(window.isOpen())
             {
-
-
-
-                //EVENTOS
-
+                ///EVENTOS
                 while(window.pollEvent(event))
                 {
                     if (event.type == sf::Event::Closed)
@@ -167,8 +158,7 @@ int main()
                     }
                 }
 
-                //UPDATE
-
+                ///UPDATE
                 {
 
                     //Respuesta Inputs
@@ -193,9 +183,9 @@ int main()
                                     {
                                         buffer = std::to_string(i);
                                         graficos.aTaburetesADibujar[i].setFillColor(TABURETE_OCUPADO);
-                                        write(fdS1[1],buffer.c_str(),1);
+                                        write(fdS2[1],buffer.c_str(),1);
                                         buffer = "ERROR";
-                                        //kill(son1,SIGUSR2); DESCOMENTAR-**************************************
+                                        //kill(son2,SIGUSR2); DESCOMENTAR-**************************************
 
                                         graficos.DejaComida(graficos.aPedidosADibujar[i].getFillColor());
 
@@ -213,42 +203,40 @@ int main()
 
 
                     //Comprobación mesa libre
-                    if(!waitingForClient && firstStoolFree() != -1)
+                    if(!waitingForClient && FirstStoolFree() != -1)
                     {
-                        kill(son0, SIGUSR1);
+                        kill(son1, SIGUSR1);
                         waitingForClient = true;
                     }
                 }
 
-
-                //DRAW
-
+                ///DRAW
                 {
 
-                window.clear(sf::Color(200,200,200,255));
+                    window.clear(sf::Color(200,200,200,255));
 
 
-                for(size_t i = 0; i < graficos.aTextosADibujar.size(); i++)
-                {
-                    window.draw(graficos.aTextosADibujar[i]);
-                }
-                for(size_t i = 0; i < graficos.aObjetosADibujar.size(); i++)
-                {
-                    window.draw(graficos.aObjetosADibujar[i]);
-                }
+                    for(size_t i = 0; i < graficos.aTextosADibujar.size(); i++)
+                    {
+                        window.draw(graficos.aTextosADibujar[i]);
+                    }
+                    for(size_t i = 0; i < graficos.aObjetosADibujar.size(); i++)
+                    {
+                        window.draw(graficos.aObjetosADibujar[i]);
+                    }
 
-                for (size_t i =0 ; i< NUM_MESAS; i++)
-                {
-                    window.draw(graficos.aTaburetesADibujar[i]);
-                    window.draw(graficos.aPedidosADibujar[i]);
-                }
+                    for (size_t i =0 ; i< NUM_MESAS; i++)
+                    {
+                        window.draw(graficos.aTaburetesADibujar[i]);
+                        window.draw(graficos.aPedidosADibujar[i]);
+                    }
 
-                graficos.UpdateTimer(graficos.aTextosADibujar);
-                window.draw(graficos.jugador);
-                window.draw(graficos.manoIzquierda);
-                window.draw(graficos.manoDerecha);
+                    graficos.UpdateTimer(graficos.aTextosADibujar);
+                    window.draw(graficos.jugador);
+                    window.draw(graficos.manoIzquierda);
+                    window.draw(graficos.manoDerecha);
 
-                window.display();
+                    window.display();
 
                 }
 
@@ -257,63 +245,30 @@ int main()
             }
             //esperar a todos los hijos
             //matarlos
-            kill(son0, SIGKILL);
             kill(son1, SIGKILL);
+            kill(son2, SIGKILL);
             //exit
+            return 0;
        }
     }
-    return 0;
 }
 
-int firstStoolFree()
-{
-    for(size_t x = 0; x < 3; x++)
-    {
-        if(!graficos.stoolState[x])
-        {
-            return x;
-        }
-    }
-    std::cout << "Error en firstStoolFree()" << std::endl;
-    return -1;
-}
-
-void DrawClient(sf::Color color)
-{
-     //Llenamos el taburete en nuestra array
-    int taburete = graficos.stoolState[firstStoolFree()];
-    graficos.stoolState[taburete] = taburete;
-    graficos.aTaburetesADibujar[taburete].setFillColor(TABURETE_OCUPADO);
-
-    graficos.aPedidosADibujar[taburete].setFillColor(color);
-}
-
-void ClockAlarm(int param)
-{
-    graficos.tiempoRestante--;
-    alarm(1);
-}
-
-void TriggerAlarm(int param)
-{
-    alarm(1);
-}
-
+/// --- HIJO 1 ---
 void CargarClienteSon(int param)
 {
-    char* n;
+    char* n = new char[MAX_BUFFER_RGB];
     if (pedidos.size())
     {
         std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
         n = rgb.c_str();
-        write(fdS0[1],n,9);
+        write(fdS1[1],n,MAX_BUFFER_RGB);
 
         pedidos.pop();
     }
     else
     {
         n = '0';
-        write(fdS0[1],n,1);
+        write(fdS1[1],n,1);
     }
 
     kill(getppid(), SIGUSR1);
@@ -324,13 +279,13 @@ void CargarClienteFath(int param){
 
     sf::Color auxCol = sf::Color::White;
     std::string aux;
-    char * buffer = new char[9];
+    char * buffer = new char[MAX_BUFFER_RGB];
     int colInt[3];
 
     //Leemos los 9 numeros que componen el color de la comida
-    size_t is = read(fdS0[0],buffer, 9);
+    size_t is = read(fdS1[0],buffer, MAX_BUFFER_RGB);
 
-     int control = 0;
+    int control = 0;
 
   for(size_t x {0}; x < 3; x++)
     {
@@ -353,21 +308,61 @@ void CargarClienteFath(int param){
     DrawClient(auxCol);
 }
 
+/// --- HIJO 2 ---
 void UnLoadWhatClient(int param)
 {
-    char buffer[MAX_BUFFER_SIZE];
-    size_t t = read(fdS1[0],buffer, MAX_BUFFER_SIZE);
+    char* buffer = new char[MAX_BUFFER_S2];
+    size_t t = read(fdS2[0],buffer, MAX_BUFFER_S2);
     buffer[t] = '\0';
+
     int n = std::stoi(buffer);
     TabureteComiendo.push(n);
     alarm(5);
 }
 void UnLoadClient (int param)
 {
-    char* n = std::to_string(TabureteComiendo.front()).c_str();
+    char* buffer = new char[MAX_BUFFER_S2];
+    buffer = std::to_string(TabureteComiendo.front()).c_str();
 
-    write(fdS1[1],n,1);
+    write(fdS2[1],buffer,1);
 
     TabureteComiendo.pop();
     kill(getppid(), SIGUSR2);
 }
+
+/// --- PADRE ---
+void ClockAlarm(int param)
+{
+    graficos.tiempoRestante--;
+    alarm(1);
+}
+void TriggerAlarm(int param)
+{
+    alarm(5);
+}
+
+void DrawClient(sf::Color color)
+{
+     //Llenamos el taburete en nuestra array
+    int taburete = graficos.stoolState[FirstStoolFree()];
+    graficos.stoolState[taburete] = taburete;
+    graficos.aTaburetesADibujar[taburete].setFillColor(TABURETE_OCUPADO);
+
+    graficos.aPedidosADibujar[taburete].setFillColor(color);
+}
+
+int FirstStoolFree()
+{
+    for(size_t x = 0; x < 3; x++)
+    {
+        if(!graficos.stoolState[x])
+        {
+            return x;
+        }
+    }
+    std::cout << "Error en FirstStoolFree()" << std::endl;
+    return -1;
+}
+
+
+

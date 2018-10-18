@@ -1726,13 +1726,14 @@
 	<new>
 	<exception>
 
-1539773755 source:/home/maurizio/Documents/SFMLgame/PruebaSFML1/main.cpp
+1539861918 source:/home/maurizio/Documents/SFMLgame/PruebaSFML1/main.cpp
 	<iostream>
 	<string>
 	<fstream>
 	<sstream>
 	<vector>
 	<queue>
+	<time.h>
 	<unistd.h>
 	<fcntl.h>
 	<sys/wait.h>
@@ -1741,7 +1742,7 @@
 	<SFML/Graphics.hpp>
 	"../XML/rapidxml.hpp"
 
-1539770502 /home/maurizio/Documents/SFMLgame/PruebaSFML1/include/GraficoSFML.h
+1539861865 /home/maurizio/Documents/SFMLgame/PruebaSFML1/include/GraficoSFML.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<iostream>
@@ -2162,6 +2163,6 @@
 	<new>
 	<exception>
 
-1539770459 source:/home/maurizio/Documents/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
+1539861960 source:/home/maurizio/Documents/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
 	"GraficoSFML.h"
 

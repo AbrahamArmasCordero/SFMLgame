@@ -57,7 +57,8 @@ class GraficoSFML
         void MueveJugador(sf::Vector2f _posicion);
         virtual ~GraficoSFML();
 
-         void UpdateTimer(std::vector<sf::Text>_textos);
+         void UpdateTimer();
+         void UpdateClientCounter();
 
     protected:
 

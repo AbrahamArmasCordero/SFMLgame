@@ -48,6 +48,28 @@ void GraficoSFML::InitContadorClientes()
     aTextosADibujar.push_back(txtCounterClients);
 }
 
+void GraficoSFML::UpdateClientCounter()
+{
+    sf::Text txtCounterClients;
+    txtCounterClients.setFont(font);
+    txtCounterClients.setPosition(120,10);
+    txtCounterClients.setFillColor(sf::Color::White);
+    txtCounterClients.setCharacterSize(14);
+    txtCounterClients.setString(std::to_string(numClientesRestantes)+" clientes");
+    aTextosADibujar[0] = txtCounterClients;
+}
+
+ void GraficoSFML::UpdateTimer()
+ {
+    sf::Text txtCounterTime;
+    txtCounterTime.setFont(font);
+    txtCounterTime.setPosition(10,10);
+    txtCounterTime.setFillColor(sf::Color::Red);
+    txtCounterTime.setCharacterSize(14);
+    txtCounterTime.setString(std::to_string(tiempoRestante)+" seg.");
+    aTextosADibujar[1]=txtCounterTime;
+ }
+
 void GraficoSFML::InitTaburetes()
 {
     sf::CircleShape shape(30.f);
@@ -244,17 +266,6 @@ void GraficoSFML::TiraComida()
  {
     posicionJugador = _posicion;
     UpdatePlayer();
- }
-
- void GraficoSFML::UpdateTimer(std::vector<sf::Text>_textos)
- {
-    sf::Text txtCounterTime;
-    txtCounterTime.setFont(font);
-    txtCounterTime.setPosition(10,10);
-    txtCounterTime.setFillColor(sf::Color::Red);
-    txtCounterTime.setCharacterSize(14);
-    txtCounterTime.setString(std::to_string(tiempoRestante)+" seg.");
-    aTextosADibujar[1]=txtCounterTime;
  }
 
 

@@ -317,7 +317,6 @@ void CargarClienteSon(int param)
     }
 
     kill(getppid(), SIGUSR1);
-    std::cout << "HEYEYEYYEYEYY" << std::endl;
 }
 
 void CargarClienteFath(int param){
@@ -325,16 +324,11 @@ void CargarClienteFath(int param){
 
     sf::Color auxCol = sf::Color::White;
     std::string aux;
-    char * buffer;
+    char * buffer = new char[9];
     int colInt[3];
 
     //Leemos los 9 numeros que componen el color de la comida
     size_t is = read(fdS0[0],buffer, 9);
-    buffer[is] = '\0';
-    std::cout << is << std::endl;
-    std::cout << buffer << std::endl;
-
-     //buffer = "255000000";
 
      int control = 0;
 
@@ -345,21 +339,18 @@ void CargarClienteFath(int param){
         {
             aux = {"0"};
             control++;
-            std::cout << "guay" << std::endl;
 
         }
-        /*else
+        else
         {
             aux = {buffer[control], buffer[control+1], buffer[control+2]};
             control += 3;
-        }*/
-          //colInt[x] = std::stoi(aux);
-          //std::cout << colInt[x] << std::endl;
-
+        }
+          colInt[x] = std::stoi(aux);
     }
 
-    //auxCol = sf::Color(colInt[0], colInt[1], colInt[2], 255);
-    //DrawClient(auxCol);
+    auxCol = sf::Color(colInt[0], colInt[1], colInt[2], 255);
+    DrawClient(auxCol);
 }
 
 void UnLoadWhatClient(int param)

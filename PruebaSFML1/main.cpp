@@ -41,6 +41,7 @@ std::queue<int> TabureteComiendo = std::queue<int>();//se ejecuta cuando el hijo
 
 void UnLoadWhatClient(int param);
 void UnLoadClient(int param);
+bool waitingForClient = true;
 
 /// --- PADRE ---
 GraficoSFML graficos;
@@ -125,9 +126,10 @@ int main()
 
             bool mouseLeftButtPressed = false;
             bool mouseRightButtPressed = false;
-            bool waitingForClient = false;
 
             std::string buffer;
+
+            waitingForClient = true;
 
             while(window.isOpen())
             {
@@ -201,12 +203,11 @@ int main()
                         graficos.MueveJugador(sf::Vector2f(event.mouseButton.x, event.mouseButton.y));
                     }
 
-
                     //Comprobación mesa libre
-                    if(!waitingForClient && FirstStoolFree() != -1)
+                    if(waitingForClient && !graficos.RestauranteLLeno())
                     {
-                        kill(son1, SIGUSR1);
-                        waitingForClient = true;
+                        kill(son0, SIGUSR1);
+                        waitingForClient = false;
                     }
                 }
 
@@ -254,24 +255,67 @@ int main()
 }
 
 /// --- HIJO 1 ---
+
+void DrawClient(sf::Color color)
+{
+     //Llenamos el taburete en nuestra array
+
+     int i = 0;
+
+     while(i  < 4 && graficos.TabureteOcupado(i))
+     {
+      i++;
+     }
+
+     if (i < 3)
+     {
+        graficos.OcupaTaburete(i);
+        graficos.aPedidosADibujar[i].setFillColor(color);
+        waitingForClient = true;
+     }
+}
+
+void ClockAlarm(int param)
+{
+    graficos.tiempoRestante--;
+    alarm(1);
+}
+
+void TriggerAlarm(int param)
+{
+    alarm(5);
+}
+
 void CargarClienteSon(int param)
 {
-    char* n = new char[MAX_BUFFER_RGB];
-    if (pedidos.size())
+    if (!pedidos.empty())
     {
-        std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
-        n = rgb.c_str();
-        write(fdS1[1],n,MAX_BUFFER_RGB);
-
-        pedidos.pop();
+        char* n = new char[MAX_BUFFER_RGB];
+        if (pedidos.size())
+        {
+            std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
+            n = rgb.c_str();
+            write(fdS1[1],n,MAX_BUFFER_RGB);
+    
+                pedidos.pop();
+            }
+            else
+            {
+                n = '0';
+                write(fdS0[1],n,1);
+            }
+    
+            kill(getppid(), SIGUSR1);
+        }
+    
+        else
+        {
+            n = '0';
+            write(fdS1[1],n,1);
+        }
+    
+        kill(getppid(), SIGUSR1);
     }
-    else
-    {
-        n = '0';
-        write(fdS1[1],n,1);
-    }
-
-    kill(getppid(), SIGUSR1);
 }
 
 void CargarClienteFath(int param){

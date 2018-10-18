@@ -157,16 +157,28 @@ bool GraficoSFML::TabureteVacio(int _posicion)
 
 bool GraficoSFML::TabureteOcupado(int _posicion)
 {
+
     sf::Color color = aTaburetesADibujar[_posicion].getFillColor();
-    if(color == TABURETE_OCUPADO)
+    if(color != TABURETE_VACIO)
     {
         return true;
     }
     return false;
 }
 
+bool GraficoSFML::RestauranteLLeno()
+{
+    for (int i = 0; i < NUM_MESAS; i++)
+    {
+        if (!TabureteOcupado(i)) return false;
+    }
+
+    return true;
+}
+
 void GraficoSFML::OcupaTaburete(int _posicion)
 {
+    std::cout << _posicion << std::endl;
     aTaburetesADibujar[_posicion].setFillColor(TABURETE_OCUPADO);
 }
 

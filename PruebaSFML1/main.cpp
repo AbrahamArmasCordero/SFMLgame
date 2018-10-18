@@ -200,13 +200,13 @@ int main()
                     else if(mouseRightButtPressed)
                     {
                         graficos.TiraComida();
-                        graficos.MueveJugador(sf::Vector2f(event.mouseButton.x, event.mouseButton.y));
+                        mouseRightButtPressed = false;
                     }
 
                     //Comprobación mesa libre
                     if(waitingForClient && !graficos.RestauranteLLeno())
                     {
-                        kill(son0, SIGUSR1);
+                        kill(son1, SIGUSR1);
                         waitingForClient = false;
                     }
                 }
@@ -291,32 +291,19 @@ void CargarClienteSon(int param)
     if (!pedidos.empty())
     {
         char* n = new char[MAX_BUFFER_RGB];
-        if (pedidos.size())
-        {
-            std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
-            n = rgb.c_str();
-            write(fdS1[1],n,MAX_BUFFER_RGB);
-    
-                pedidos.pop();
-            }
-            else
-            {
-                n = '0';
-                write(fdS0[1],n,1);
-            }
-    
-            kill(getppid(), SIGUSR1);
-        }
-    
-        else
-        {
-            n = '0';
-            write(fdS1[1],n,1);
-        }
-    
+
+        std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
+        n = rgb.c_str();
+        write(fdS1[1],n,MAX_BUFFER_RGB);
+
+            pedidos.pop();
+
+
         kill(getppid(), SIGUSR1);
+
     }
 }
+
 
 void CargarClienteFath(int param){
 //SIG1
@@ -375,26 +362,6 @@ void UnLoadClient (int param)
 }
 
 /// --- PADRE ---
-void ClockAlarm(int param)
-{
-    graficos.tiempoRestante--;
-    alarm(1);
-}
-void TriggerAlarm(int param)
-{
-    alarm(5);
-}
-
-void DrawClient(sf::Color color)
-{
-     //Llenamos el taburete en nuestra array
-    int taburete = graficos.stoolState[FirstStoolFree()];
-    graficos.stoolState[taburete] = taburete;
-    graficos.aTaburetesADibujar[taburete].setFillColor(TABURETE_OCUPADO);
-
-    graficos.aPedidosADibujar[taburete].setFillColor(color);
-}
-
 int FirstStoolFree()
 {
     for(size_t x = 0; x < 3; x++)

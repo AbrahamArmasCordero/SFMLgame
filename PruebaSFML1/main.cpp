@@ -11,11 +11,9 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <wait.h>
-//
 
 #include "GraficoSFML.h"
 #include <SFML/Graphics.hpp>
-
 #include "../XML/rapidxml.hpp"
 
 //constantes
@@ -28,29 +26,31 @@
 
 #define TIME_TODO 5
 
+/// AUTORES: DAVID AULADELL, MAURIZIO CARLOTTA, ABRAHAM ARMAS CORDERO
+
 int fdS1[2]; // 0 lectura, 1escritura
+pid_t son1;
 int fdS2[2];
 pid_t son2;
-pid_t son1;
 
 /// --- HIJO 1 ---
 std::queue<sf::Color> pedidos; //pedidos de los clientes
 
+void TriggerAlarm(int param);
 void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
 void CargarClienteFath(int param);
+bool waitingForClient = true;
 
 /// --- HIJO 2 ---
 std::queue<int> TabureteComiendo = std::queue<int>();//se ejecuta cuando el hijo 2 recibe un SIGUSR2
 
 void UnLoadWhatClient(int param);
 void UnLoadClient(int param);
-bool waitingForClient = true;
 
 /// --- PADRE ---
 GraficoSFML graficos;
 
 void ClockAlarm(int param); //se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
-void TriggerAlarm(int param);
 int FirstStoolFree();
 void DrawClient(sf::Color color);
 void VaciarMesa(int param);
@@ -58,9 +58,8 @@ void VaciarMesa(int param);
 int main()
 {
     srand(time(NULL));
-
-    int statusPipeS0 = pipe(fdS1);
-    if (statusPipeS0 <0) throw "error en pipe 1";
+    int statusPipeS1 = pipe(fdS1);
+    if (statusPipeS1 < 0) throw "error en pipe 1";
 
     /// --- LLEGADA DE CLIENTES ---
     if((son1 = fork()) == 0){
@@ -101,18 +100,17 @@ int main()
         exit(0);
 
     }else {
-
-        int statusPipeS1 = pipe(fdS2);
-        if (statusPipeS1 <0) throw "error en pipe 2";
+        int statusPipeS2 = pipe(fdS2);
+        if (statusPipeS2 < 0 ) throw "error en pipe 2";
 
     /// --- CLIENTES COMIENDO ---
         if((son2 = fork()) == 0){
-            //recibo señal SIGUSR2 DONE
-            //leo mi fdP2 DONE
-            //almaceno el asiento ocupado DONE
-            //espero 5 segundos
+            //recibo señal SIGUSR2
+            //leo mi fdP2
+            //almaceno el asiento ocupado
+            //Hago un hijo que espera 5 segundos y em envia un alarm 5 segundos
             //vaciar un asiento
-            //vuelta al loop o pausa
+            //vuelta al loop de pausa
             signal(SIGALRM, UnLoadClient);
             signal(SIGUSR2, UnLoadWhatClient);
 
@@ -191,7 +189,6 @@ int main()
                                         buffer = std::to_string(i);
                                         graficos.aTaburetesADibujar[i].setFillColor(TABURETE_COMIENDO);
                                         write(fdS2[1],buffer.c_str(),1);
-                                        buffer = "ERROR";
                                         kill(son2,SIGUSR2);
 
                                         graficos.DejaComida(graficos.aPedidosADibujar[i].getFillColor());
@@ -262,7 +259,61 @@ int main()
 }
 
 /// --- HIJO 1 ---
+void TriggerAlarm(int param)
+{
+    alarm(TIME_TODO);
+}
 
+void CargarClienteSon(int param)
+{
+    if (!pedidos.empty())
+    {
+        char* n = new char[MAX_BUFFER_RGB];
+
+        std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
+        n = rgb.c_str();
+        write(fdS1[1],n,MAX_BUFFER_RGB);
+
+            pedidos.pop();
+
+
+        kill(getppid(), SIGUSR1);
+
+    }
+}
+
+/// --- HIJO 2 ---
+void UnLoadWhatClient(int param)
+{
+    pid_t pid;
+    char* buffer = new char[MAX_BUFFER_S2];
+    size_t t = read(fdS2[0],buffer, MAX_BUFFER_S2);
+    buffer[t] = '\0';
+
+    int n = std::stoi(buffer);
+    TabureteComiendo.push(n);
+
+    if(pid = fork() == 0)
+    {
+        sleep(5);
+        kill(getppid(), SIGALRM);
+        exit(0);
+    }
+
+}
+
+void UnLoadClient (int param)
+{
+    char* buffer = new char[MAX_BUFFER_S2];
+    buffer = std::to_string(TabureteComiendo.front()).c_str();
+
+    write(fdS2[1],buffer,1);
+
+    TabureteComiendo.pop();
+    kill(getppid(), SIGUSR2);
+}
+
+/// --- PADRE ---
 void DrawClient(sf::Color color)
 {
      //Llenamos el taburete en nuestra array
@@ -299,102 +350,6 @@ void DrawClient(sf::Color color)
     }
 }
 
-void ClockAlarm(int param)
-{
-    graficos.tiempoRestante--;
-    alarm(1);
-}
-
-void TriggerAlarm(int param)
-{
-    alarm(TIME_TODO);
-}
-
-void CargarClienteSon(int param)
-{
-    if (!pedidos.empty())
-    {
-        char* n = new char[MAX_BUFFER_RGB];
-
-        std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
-        n = rgb.c_str();
-        write(fdS1[1],n,MAX_BUFFER_RGB);
-
-            pedidos.pop();
-
-
-        kill(getppid(), SIGUSR1);
-
-    }
-}
-
-void CargarClienteFath(int param){
-//SIG1
-
-    sf::Color auxCol = sf::Color::White;
-    std::string aux;
-    char * buffer = new char[MAX_BUFFER_RGB];
-    int colInt[3];
-
-    //Leemos los 9 numeros que componen el color de la comida
-    size_t is = read(fdS1[0],buffer, MAX_BUFFER_RGB);
-
-    int control = 0;
-
-  for(size_t x {0}; x < 3; x++)
-    {
-
-        if(buffer[control] == '0')
-        {
-            aux = {"0"};
-            control++;
-
-        }
-        else
-        {
-            aux = {buffer[control], buffer[control+1], buffer[control+2]};
-            control += 3;
-        }
-          colInt[x] = std::stoi(aux);
-    }
-
-    auxCol = sf::Color(colInt[0], colInt[1], colInt[2], 255);
-    DrawClient(auxCol);
-}
-
-/// --- HIJO 2 ---
-
-void UnLoadWhatClient(int param)
-{
-    pid_t pid;
-    char* buffer = new char[MAX_BUFFER_S2];
-    size_t t = read(fdS2[0],buffer, MAX_BUFFER_S2);
-    buffer[t] = '\0';
-
-    int n = std::stoi(buffer);
-    TabureteComiendo.push(n);
-
-    if(pid = fork() == 0)
-    {
-        sleep(5);
-        kill(getppid(), SIGALRM);
-        exit(0);
-    }
-
-}
-
-void UnLoadClient (int param)
-{
-    char* buffer = new char[MAX_BUFFER_S2];
-    buffer = std::to_string(TabureteComiendo.front()).c_str();
-
-    write(fdS2[1],buffer,1);
-
-    TabureteComiendo.pop();
-    kill(getppid(), SIGUSR2);
-}
-
-/// --- PADRE ---
 int FirstStoolFree()
 {
     for(size_t x = 0; x < 3; x++)
@@ -424,5 +379,43 @@ void VaciarMesa(int param)
 
 }
 
+void CargarClienteFath(int param){
+//SIG1
 
+    sf::Color auxCol = sf::Color::White;
+    std::string aux;
+    char * buffer = new char[MAX_BUFFER_RGB];
+    int colInt[3];
+
+    //Leemos los 9 numeros que componen el color de la comida
+    size_t is = read(fdS1[0],buffer, MAX_BUFFER_RGB);
+
+    int control = 0;
+
+  for(size_t x {0}; x < 3; x++)
+    {
+
+        if(buffer[control] == '0')
+        {
+            aux = "0";
+            control++;
+
+        }
+        else
+        {
+            aux = {buffer[control], buffer[control+1], buffer[control+2]};
+            control += 3;
+        }
+          colInt[x] = std::stoi(aux);
+    }
+
+    auxCol = sf::Color(colInt[0], colInt[1], colInt[2], 255);
+    DrawClient(auxCol);
+}
+
+void ClockAlarm(int param)
+{
+    graficos.tiempoRestante--;
+    alarm(1);
+}
 

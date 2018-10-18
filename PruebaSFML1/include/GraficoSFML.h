@@ -44,6 +44,7 @@ class GraficoSFML
         void OcupaTaburete(int _posicion);
         void VaciaTaburete(int _posicion);
 
+        bool RestauranteLLeno();
         void VaciaPedido(int _posicion);
         void PonPedido(int _posicion, sf::Color _queComida);
 

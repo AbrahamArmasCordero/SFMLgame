@@ -849,16 +849,17 @@
 1539014064 source:/home/b/Documents/CodeBlocksProjects/AA1/EjemploInterfazSFML/PruebaSFML1/src/GraficoSFML.cpp
 	"GraficoSFML.h"
 
-1539685785 source:/home/b/Documents/SFMLgame/PruebaSFML1/main.cpp
+1539856453 source:/home/b/Documents/SFMLgame/PruebaSFML1/main.cpp
 	<iostream>
+	<string>
+	<fstream>
+	<sstream>
+	<vector>
+	<queue>
 	<unistd.h>
 	<fcntl.h>
 	<sys/wait.h>
 	<wait.h>
-	<vector>
-	<fstream>
-	<sstream>
-	<unistd.h>
 	"GraficoSFML.h"
 	<SFML/Graphics.hpp>
 	"../XML/rapidxml.hpp"
@@ -1272,13 +1273,13 @@
 	<SFML/Graphics/Drawable.hpp>
 	<SFML/Window/GlResource.hpp>
 
-1539682290 /home/b/Documents/SFMLgame/PruebaSFML1/include/GraficoSFML.h
+1539854331 /home/b/Documents/SFMLgame/PruebaSFML1/include/GraficoSFML.h
 	<SFML/Graphics.hpp>
 	<vector>
 	<iostream>
 	<string>
 
-1539685165 source:/home/b/Documents/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
+1539856497 source:/home/b/Documents/SFMLgame/PruebaSFML1/src/GraficoSFML.cpp
 	"GraficoSFML.h"
 
 1539682290 /home/b/Documents/SFMLgame/XML/rapidxml.hpp

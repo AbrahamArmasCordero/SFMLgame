@@ -66,7 +66,7 @@ int main()
 
         signal(SIGUSR1, TriggerAlarm);
         signal(SIGALRM, CargarClienteSon);
-
+        close(fdS1[0]);
         rapidxml::xml_document<> xmlFile;
         std::ifstream file("config.xml");
         std::stringstream buffer;
@@ -125,7 +125,7 @@ int main()
             signal(SIGUSR1, CargarClienteFath);
             signal(SIGUSR2, VaciarMesa);
             alarm(1);
-
+            close(fdS1[1]);
             //VARIABLES
             sf::Event event;
 

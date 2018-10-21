@@ -34,7 +34,10 @@ int fdS2[2];
 pid_t son2;
 
 /// --- HIJO 1 ---
-std::queue<sf::Color> pedidos; //pedidos de los clientes
+std::vector<sf::Color> pedidos; //pedidos de los clientes
+/// --- Control Clientes/Pedidos ---
+const int RANDOM_TABURETES = 1; // control orden aparicion de los clientes *** 0 = ordenado de arriba abajo : 1 = orden aleatorio
+const int RANDOM_PEDIDOS = 1;// control orden aparicion de los pedidos *** 0 ordenados segun XML : 1 = orden aleatorio
 
 void TriggerAlarm(int param);
 void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
@@ -58,6 +61,7 @@ void VaciarMesa(int param);
 int main()
 {
     srand(time(NULL));
+
     int statusPipeS1 = pipe(fdS1);
     if (statusPipeS1 < 0) throw "error en pipe 1";
 
@@ -92,7 +96,7 @@ int main()
                     newPedido.b = std::atoi(pAttr->value());
             }
 
-            pedidos.push(newPedido);
+            pedidos.push_back(newPedido);
         }
 
         while(1){ pause(); }
@@ -269,14 +273,21 @@ void CargarClienteSon(int param)
     if (!pedidos.empty())
     {
         char* n = new char[MAX_BUFFER_RGB];
+        std::string rgb;
+        if(RANDOM_PEDIDOS == 0)
+        {
+            rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
+            pedidos.erase(pedidos.begin());
+        }
+        else
+        {
+            int rnd = rand() % pedidos.size();
+            rgb = std::to_string(pedidos[rnd].r) +  std::to_string(pedidos[rnd].g) + std::to_string(pedidos[rnd].b);
+            pedidos.erase(pedidos.begin() +rnd);
+        }
 
-        std::string rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
         n = rgb.c_str();
         write(fdS1[1],n,MAX_BUFFER_RGB);
-
-            pedidos.pop();
-
-
         kill(getppid(), SIGUSR1);
 
     }
@@ -318,35 +329,42 @@ void DrawClient(sf::Color color)
 {
      //Llenamos el taburete en nuestra array
 
-     /*int i = 0;
-
-     while(i  < 4 && graficos.TabureteOcupado(i))
-     {
-      i++;
-     }
-
-     if (i < 3)
-     {
-        graficos.OcupaTaburete(i);
-        graficos.aPedidosADibujar[i].setFillColor(color);
-        waitingForClient = true;
-     }*/
 
      if(!graficos.RestauranteLLeno())
     {
         //Llenamos el taburete en nuestra array
 
-        std::vector<int>  emptyChair = std::vector<int>();
-
-        for(int i = 0; i < NUM_MESAS; i++)
+        if (RANDOM_TABURETES == 0)
         {
-        if (!graficos.TabureteOcupado(i)) emptyChair.push_back(i);
+            int i = 0;
+
+            while(i  < 4 && graficos.TabureteOcupado(i))
+            {
+                i++;
+            }
+
+            if (i < 3)
+            {
+                graficos.OcupaTaburete(i);
+                graficos.aPedidosADibujar[i].setFillColor(color);
+                waitingForClient = true;
+            }
+        }
+        else
+        {
+            std::vector<int>  emptyChair = std::vector<int>();
+
+            for(int i = 0; i < NUM_MESAS; i++)
+            {
+                if (!graficos.TabureteOcupado(i)) emptyChair.push_back(i);
+            }
+
+            int nuevoSitio = rand() % emptyChair.size();
+            graficos.OcupaTaburete(emptyChair[nuevoSitio]);
+            graficos.aPedidosADibujar[emptyChair[nuevoSitio]].setFillColor(color);
+            waitingForClient = true;
         }
 
-        int nuevoSitio = rand() % emptyChair.size();
-        graficos.OcupaTaburete(emptyChair[nuevoSitio]);
-        graficos.aPedidosADibujar[emptyChair[nuevoSitio]].setFillColor(color);
-        waitingForClient = true;
     }
 }
 

@@ -200,7 +200,6 @@ bool GraficoSFML::RestauranteLLeno()
 
 void GraficoSFML::OcupaTaburete(int _posicion)
 {
-    std::cout << _posicion << std::endl;
     aTaburetesADibujar[_posicion].setFillColor(TABURETE_OCUPADO);
 }
 

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 
+#define TABURETE_COMIENDO sf::Color::Blue
 #define TABURETE_VACIO sf::Color::White
 #define TABURETE_OCUPADO sf::Color::Magenta
 #define NUM_MESAS 3
@@ -26,19 +27,24 @@ class GraficoSFML
         sf::RectangleShape manoDerecha;
 
         std::vector<sf::RectangleShape> aObjetosADibujar;
+
         std::vector<sf::Text> aTextosADibujar;
         sf::CircleShape aTaburetesADibujar[NUM_MESAS];
         sf::RectangleShape aPedidosADibujar[NUM_MESAS];
 
         int tiempoRestante;
         int numClientesRestantes;
+        bool stoolState[3];
         sf::Vector2f posicionJugador;
 
         GraficoSFML();
+        bool TabureteComiendo(int posicion_);
         bool TabureteVacio(int _posicion);
+        bool TabureteOcupado(int);
         void OcupaTaburete(int _posicion);
         void VaciaTaburete(int _posicion);
 
+        bool RestauranteLLeno();
         void VaciaPedido(int _posicion);
         void PonPedido(int _posicion, sf::Color _queComida);
 
@@ -46,11 +52,13 @@ class GraficoSFML
 
         //Retorna false si la comida que tiene que dejar no la tiene en ninguna de las dos manos.
         bool DejaComida(sf::Color _queComida);
+        void TiraComida();
 
         void MueveJugador(sf::Vector2f _posicion);
         virtual ~GraficoSFML();
 
-         void UpdateTimer(std::vector<sf::Text>_textos);
+         void UpdateTimer();
+         void UpdateClientCounter();
 
     protected:
 

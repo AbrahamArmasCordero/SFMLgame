@@ -3,16 +3,20 @@
 GraficoSFML::GraficoSFML():posicionJugador(sf::Vector2f(385.f,285.f)),jugador(30.f)
 {
     //ctor
-    tiempoRestante = 10;
+    tiempoRestante = 180;
     numClientesRestantes = 5;
     font.loadFromFile("courier.ttf");
-    aOrigenMesas.push_back(sf::Vector2f(120,85));
+    aOrigenMesas.push_back(sf::Vector2f(120,84));
     aOrigenMesas.push_back(sf::Vector2f(120,255));
     aOrigenMesas.push_back(sf::Vector2f(120,425));
 
     aOrigenDispensadores.push_back(sf::Vector2f(650, 85));
     aOrigenDispensadores.push_back(sf::Vector2f(650, 255));
     aOrigenDispensadores.push_back(sf::Vector2f(650, 425));
+
+    stoolState[0] = false;
+    stoolState[1] = false;
+    stoolState[2] = false;
 
     InitContadorClientes();
     InitContadorTiempo();
@@ -43,6 +47,28 @@ void GraficoSFML::InitContadorClientes()
     txtCounterClients.setString(std::to_string(numClientesRestantes)+" clientes");
     aTextosADibujar.push_back(txtCounterClients);
 }
+
+void GraficoSFML::UpdateClientCounter()
+{
+    sf::Text txtCounterClients;
+    txtCounterClients.setFont(font);
+    txtCounterClients.setPosition(120,10);
+    txtCounterClients.setFillColor(sf::Color::White);
+    txtCounterClients.setCharacterSize(14);
+    txtCounterClients.setString(std::to_string(numClientesRestantes)+" clientes");
+    aTextosADibujar[0] = txtCounterClients;
+}
+
+ void GraficoSFML::UpdateTimer()
+ {
+    sf::Text txtCounterTime;
+    txtCounterTime.setFont(font);
+    txtCounterTime.setPosition(10,10);
+    txtCounterTime.setFillColor(sf::Color::Red);
+    txtCounterTime.setCharacterSize(14);
+    txtCounterTime.setString(std::to_string(tiempoRestante)+" seg.");
+    aTextosADibujar[1]=txtCounterTime;
+ }
 
 void GraficoSFML::InitTaburetes()
 {
@@ -131,6 +157,15 @@ void GraficoSFML::InitObjetosFijos()
 
 
 }
+bool GraficoSFML::TabureteComiendo(int posicion_)
+{
+    sf::Color color = aTaburetesADibujar[posicion_].getFillColor();
+    if (color == TABURETE_COMIENDO)
+    {
+        return true;
+    }
+    return false;
+}
 
 bool GraficoSFML::TabureteVacio(int _posicion)
 {
@@ -140,6 +175,27 @@ bool GraficoSFML::TabureteVacio(int _posicion)
         return true;
     }
     return false;
+}
+
+bool GraficoSFML::TabureteOcupado(int _posicion)
+{
+
+    sf::Color color = aTaburetesADibujar[_posicion].getFillColor();
+    if(color != TABURETE_VACIO)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool GraficoSFML::RestauranteLLeno()
+{
+    for (int i = 0; i < NUM_MESAS; i++)
+    {
+        if (!TabureteOcupado(i)) return false;
+    }
+
+    return true;
 }
 
 void GraficoSFML::OcupaTaburete(int _posicion)
@@ -161,6 +217,8 @@ void GraficoSFML::PonPedido(int _posicion, sf::Color _queComida)
 {
     aPedidosADibujar[_posicion].setFillColor(_queComida);
 }
+
+//bool GraficoSFML
 
 void GraficoSFML::CogeComida(sf::Color _queComida)
 {
@@ -191,21 +249,22 @@ bool GraficoSFML::DejaComida(sf::Color _queComida)
     return false;
 }
 
+void GraficoSFML::TiraComida()
+{
+    if(manoDerecha.getFillColor() != PEDIDO_VACIO)
+    {
+        manoDerecha.setFillColor(PEDIDO_VACIO);
+    }
+    else if (manoIzquierda.getFillColor() != PEDIDO_VACIO)
+    {
+        manoIzquierda.setFillColor(PEDIDO_VACIO);
+    }
+}
+
  void GraficoSFML::MueveJugador(sf::Vector2f _posicion)
  {
     posicionJugador = _posicion;
     UpdatePlayer();
- }
-
- void GraficoSFML::UpdateTimer(std::vector<sf::Text>_textos)
- {
-    sf::Text txtCounterTime;
-    txtCounterTime.setFont(font);
-    txtCounterTime.setPosition(10,10);
-    txtCounterTime.setFillColor(sf::Color::Red);
-    txtCounterTime.setCharacterSize(14);
-    txtCounterTime.setString(std::to_string(tiempoRestante)+" seg.");
-    aTextosADibujar[1]=txtCounterTime;
  }
 
 
@@ -213,3 +272,5 @@ GraficoSFML::~GraficoSFML()
 {
     //dtor
 }
+
+//    tiempoRestante = 180;

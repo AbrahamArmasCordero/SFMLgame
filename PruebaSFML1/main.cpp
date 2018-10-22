@@ -39,10 +39,10 @@ std::vector<sf::Color> pedidos; //pedidos de los clientes
 const int RANDOM_TABURETES = 1; // control orden aparicion de los clientes *** 0 = ordenado de arriba abajo : 1 = orden aleatorio
 const int RANDOM_PEDIDOS = 1;// control orden aparicion de los pedidos *** 0 ordenados segun XML : 1 = orden aleatorio
 
+bool waitingForClient = true;
+
 void TriggerAlarm(int param);
 void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
-void CargarClienteFath(int param);
-bool waitingForClient = true;
 
 /// --- HIJO 2 ---
 std::queue<int> TabureteComiendo = std::queue<int>();//se ejecuta cuando el hijo 2 recibe un SIGUSR2
@@ -57,6 +57,7 @@ void ClockAlarm(int param); //se triggerea cuando el padre le panda al hijo 0 un
 int FirstStoolFree();
 void DrawClient(sf::Color color);
 void VaciarMesa(int param);
+void CargarClienteFath(int param);
 
 int main()
 {
@@ -325,11 +326,27 @@ void UnLoadClient (int param)
 }
 
 /// --- PADRE ---
+void ClockAlarm(int param)
+{
+    graficos.tiempoRestante--;
+    alarm(1);
+}
+
+int FirstStoolFree()
+{
+    for(size_t x = 0; x < 3; x++)
+    {
+        if(!graficos.stoolState[x])
+        {
+            return x;
+        }
+    }
+    return -1;
+}
+
 void DrawClient(sf::Color color)
 {
      //Llenamos el taburete en nuestra array
-
-
      if(!graficos.RestauranteLLeno())
     {
         //Llenamos el taburete en nuestra array
@@ -368,18 +385,6 @@ void DrawClient(sf::Color color)
     }
 }
 
-int FirstStoolFree()
-{
-    for(size_t x = 0; x < 3; x++)
-    {
-        if(!graficos.stoolState[x])
-        {
-            return x;
-        }
-    }
-    std::cout << "Error en FirstStoolFree()" << std::endl;
-    return -1;
-}
 
 void VaciarMesa(int param)
 {
@@ -429,11 +434,5 @@ void CargarClienteFath(int param){
 
     auxCol = sf::Color(colInt[0], colInt[1], colInt[2], 255);
     DrawClient(auxCol);
-}
-
-void ClockAlarm(int param)
-{
-    graficos.tiempoRestante--;
-    alarm(1);
 }
 

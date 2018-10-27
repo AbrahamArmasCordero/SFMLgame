@@ -42,24 +42,26 @@
 
 #define VACIO 0
 #define OCUPADO 1
-#define COMIENDO 2
+#define EMPEZANDO 2
+#define COMIENDO 3
 
 /// AUTORES: DAVID AULADELL, MAURIZIO CARLOTTA, ABRAHAM ARMAS CORDERO
 
 /// -- DATOS -- ///
 struct Data
 {
+    public:
     char TaburetesOcupados[3]; //0 = 1º taburete , 1= 2º taburete, 2 = 3º taburete
     sf::Color ClienteACargar; // if( this== null) { waitingForclients = true} else {waitingForClients = false; }
 
-    public void SetDefault()
+    void SetDefault()
     {
-        TaburetesOcupados[0](VACIO);
-        TaburetesOcupados[1](VACIO);
-        TaburetesOcupados[2](VACIO);
-        ClienteACargar = null;
+        TaburetesOcupados[0] = VACIO;
+        TaburetesOcupados[1] = VACIO;
+        TaburetesOcupados[2] = VACIO;
+        //ClienteACargar = NULL;
     }
-    public bool RestauranteLleno()
+    bool RestauranteLleno()
     {
         for (int i = 0; i < 3; ++i)
         {
@@ -70,32 +72,40 @@ struct Data
         }
         return true;
     }
-}
+    bool AlguienEmpezando()
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            if(TaburetesOcupados[i] == EMPEZANDO)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+};
 union semun
 {
     int val;
     struct semid_ds* buf;
     unsigned short* array;
-}
-/// --- HIJO 1 ---
-
-/// Esta variable puede pasar a ser local del hijo entero y pasarse por parametro a las funciones necesarias
-std::vector<sf::Color> pedidos; //pedidos de los clientes
+};
 
 /// --- Control Clientes/Pedidos ---
 const int RANDOM_TABURETES = 1; // control orden aparicion de los clientes *** 0 = ordenado de arriba abajo : 1 = orden aleatorio
 const int RANDOM_PEDIDOS = 1;// control orden aparicion de los pedidos *** 0 ordenados segun XML : 1 = orden aleatorio
 
+/// --- HIJO 1 ---
 void TriggerAlarm(int param);
 void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
 
 /// --- HIJO 2 ---
 
 /// Esta variable puede pasar a ser local del hijo entero y pasarse por parametro a las funciones necesarias
-std::queue<int> TabureteComiendo = std::queue<int>();//se ejecuta cuando el hijo 2 recibe un SIGUSR2
 
-void UnLoadWhatClient(int param);
-void UnLoadClient(int param);
+void UnLoadWhatClient(struct Data*, std::queue<int> &, int);
+void UnLoadClient(struct Data*, std::queue<int> &, int);
 
 /// --- PADRE ---
 GraficoSFML graficos;
@@ -111,31 +121,34 @@ int main()
     try
     {
         srand(time(NULL));
-        ///crear memoria compartida con Data
+        /// -- Crear Memoria Compartida
         struct Data* shDatos;
         int shmID = shmget(IPC_PRIVATE, sizeof(struct Data), IPC_CREAT | 0666);
         if (shmID < 0) throw "La memoria compartida dio un problema";
+
         shDatos = (struct Data*)shmat(shmID,NULL,0);
         if (shDatos < 0) throw "El puntero a memoria compartida ha fallado";
         shDatos->SetDefault();
 
+        /// -- Crear Semaforos --
         int semID = semget(IPC_PRIVATE, 2, IPC_CREAT | 0666); //dos semaforos uno para lso recursos del hijo 1 y otro para el hijo 2
-        if (semID < 0) throw "Error al obtener semID"
+        if (semID < 0) throw "Error al obtener semID";
+
         union semun arg;
 
-        int dbg = semctl(semID,0,GETALL, arg);
-        if(dbg < 0) throw "Error al objetener los semaforos para arg.array";
+        unsigned short values[2]{ 1, 1};
+        arg.array = values;
 
-        arg.val = 1;
-        dbg = semctl(semID,0,SETALL, arg);
+        int dbg = semctl(semID,0,SETALL, arg);
         if(dbg < 0) throw "Error al hacer set de todos los semaforos";
 
         /// --- LLEGADA DE CLIENTES ---
         pid_t son1;
         if((son1 = fork()) == 0){
         /// Porque no directamente un SIGUSR1 y despues un sleep del tiempo que se necesite?
-        signal(SIGUSR1, TriggerAlarm);
-        signal(SIGALRM, CargarClienteSon);
+        std::vector<sf::Color> pedidos; //pedidos de los clientes
+        //signal(SIGUSR1, TriggerAlarm);
+        //signal(SIGALRM, CargarClienteSon);
 
         rapidxml::xml_document<> xmlFile;
         std::ifstream file("config.xml");
@@ -147,7 +160,6 @@ int main()
 
         rapidxml::xml_node<> *pRoot = xmlFile.first_node();
 
-        /// Este parser sigue siendo necesario
         for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
         {
             sf::Color newPedido;
@@ -169,16 +181,21 @@ int main()
 
         exit(0);
 
-    }else {
+    }
+    else {
 
     /// --- CLIENTES COMIENDO ---
-
         pid_t son2;
         if((son2 = fork()) == 0){
-            signal(SIGALRM, UnLoadClient);
-            signal(SIGUSR2, UnLoadWhatClient);
-
-            while(1){ pause(); }
+            std::queue<int> TabureteComiendo = std::queue<int>();
+            while(1)
+            {
+                //si el restaurante esta vacio o estan todos comiendo no lo hagas
+                if(shDatos->AlguienEmpezando())
+                {
+                    UnLoadWhatClient(shDatos, TabureteComiendo, semID);
+                }
+            }
 
             exit(0);
         }
@@ -186,8 +203,8 @@ int main()
             sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
 
             signal(SIGALRM,ClockAlarm);
-            signal(SIGUSR1, CargarClienteFath);
-            signal(SIGUSR2, VaciarMesa);
+            //signal(SIGUSR1, CargarClienteFath);
+            //signal(SIGUSR2, VaciarMesa);
             alarm(1);
             //VARIABLES
             sf::Event event;
@@ -270,12 +287,12 @@ int main()
                     }
 
                     //Comprobación mesa libre
-                    if(waitingForClient && !graficos.RestauranteLLeno())
+                   /* if(waitingForClient && !graficos.RestauranteLLeno())
                     {
                         kill(son1, SIGUSR1);
                         /// podriamos hacer que esta variable estuviese en memoria compartida y que la leyese el hijo
                         waitingForClient = false;
-                    }
+                    }*/
                 }
 
                 ///DRAW
@@ -334,11 +351,11 @@ void TriggerAlarm(int param)
     alarm(TIME_TODO);
 }
 
-void CargarClienteSon(int param)
+void CargarClienteSon(int param, std::vector<sf::Color>& pedidos)
 {
-    if (!pedidos.empty())
+    /*if (!pedidos.empty())
     {
-        char* n = new char[MAX_BUFFER_RGB];
+        //char* n = new char[MAX_BUFFER_RGB];
         std::string rgb;
         if(RANDOM_PEDIDOS == 0)
         {
@@ -356,38 +373,56 @@ void CargarClienteSon(int param)
         write(fdS1[1],n,MAX_BUFFER_RGB);
         kill(getppid(), SIGUSR1);
 
-    }
+    }*/
 }
 
 /// --- HIJO 2 ---
-void UnLoadWhatClient(int param)
+void UnLoadWhatClient(struct Data* datos, std::queue<int> &TabureteComiendo, int semID)
 {
     pid_t pid;
-    char* buffer = new char[MAX_BUFFER_S2];
-    size_t t = read(fdS2[0],buffer, MAX_BUFFER_S2);
-    buffer[t] = '\0';
-
-    int n = std::stoi(buffer);
-    TabureteComiendo.push(n);
-
-    if(pid = fork() == 0)
+    sembuf *tmpSemBuf;
+    tmpSemBuf->sem_num = 1;
+    tmpSemBuf->sem_flg = SEM_UNDO;
+    //si el restaurante esta vacio o estan todos comiendo no lo hagas
+    for(int i = 0; i < NUM_MESAS; ++i)
     {
-        sleep(5);
-        kill(getppid(), SIGALRM);
-        exit(0);
-    }
+        //ZONA CRITICA Wait
 
+        tmpSemBuf->sem_op = -1;
+        semop(semID,tmpSemBuf,1);
+        if(datos->TaburetesOcupados[i] == EMPEZANDO)
+        {
+            datos->TaburetesOcupados[i] = COMIENDO;
+            TabureteComiendo.push(i);
+            if(pid = fork() == 0)
+            {
+                sleep(5);
+                UnLoadClient(datos, TabureteComiendo, semID);
+                exit(0);
+            }
+        }
+        //Signal
+        tmpSemBuf->sem_op = 1;
+        semop(semID,tmpSemBuf,1);
+    }
+    //cojo el indice y lo guardo
+    //signal
+    //repeat
 }
 
-void UnLoadClient (int param)
+void UnLoadClient (struct Data* datos, std::queue<int> &TabureteComiendo, int semID)
 {
-    char* buffer = new char[MAX_BUFFER_S2];
-    buffer = std::to_string(TabureteComiendo.front()).c_str();
-
-    write(fdS2[1],buffer,1);
-
+    sembuf *tmpSemBuf;
+    tmpSemBuf->sem_num = 1;
+    tmpSemBuf->sem_op = -1;
+    tmpSemBuf->sem_flg = SEM_UNDO;
+    //zona critica wait
+    semop(semID,tmpSemBuf,1);
+    datos->TaburetesOcupados[TabureteComiendo.front()] = VACIO;
+    //signal
+    tmpSemBuf->sem_op = 1;
+    semop(semID,tmpSemBuf,1);
     TabureteComiendo.pop();
-    kill(getppid(), SIGUSR2);
 }
 
 /// --- PADRE ---
@@ -429,7 +464,7 @@ void DrawClient(sf::Color color)
             {
                 graficos.OcupaTaburete(i);
                 graficos.aPedidosADibujar[i].setFillColor(color);
-                waitingForClient = true;
+                //waitingForClient = true;
             }
         }
         else
@@ -444,7 +479,7 @@ void DrawClient(sf::Color color)
             int nuevoSitio = rand() % emptyChair.size();
             graficos.OcupaTaburete(emptyChair[nuevoSitio]);
             graficos.aPedidosADibujar[emptyChair[nuevoSitio]].setFillColor(color);
-            waitingForClient = true;
+            //waitingForClient = true;
         }
 
     }
@@ -476,7 +511,7 @@ void CargarClienteFath(int param){
     int colInt[3];
 
     //Leemos los 9 numeros que componen el color de la comida
-    size_t is = read(fdS1[0],buffer, MAX_BUFFER_RGB);
+    //size_t is = read(fdS1[0],buffer, MAX_BUFFER_RGB);
 
     int control = 0;
 ///no haria falta este parser

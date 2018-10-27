@@ -6,17 +6,31 @@
 #include <queue>
 #include <time.h>
 
-//temario
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <wait.h>
-
 #include "GraficoSFML.h"
 #include <SFML/Graphics.hpp>
 #include "../XML/rapidxml.hpp"
 
-//constantes
+/// --- TEMARIO DE PROCESOS, PIPES Y SIGNALS --- ///
+
+///Librerias compartidas
+#include <sys/wait.h>
+#include <wait.h>
+///Procesos, Signals
+#include <unistd.h>
+///Pipes
+#include <fcntl.h>
+
+/// --- TEMARIO DE MEMORIA COMP Y SEMAFOROS --- ///
+
+///Librerias compartidas de SHM y SEM
+#include <sys/types.h>
+#include <sys/ipc.h>
+///Memoria Compartida
+#include <sys/shm.h>
+///Semaforos
+#include <sys/sem.h>
+
+/// --- CONSTANTES --- ///
 #define WINDOW_H 800
 #define WINDOW_V 600
 #define TITLE "Mi super practica 1.1"
@@ -26,22 +40,43 @@
 
 #define TIME_TODO 5
 
+#define VACIO 0
+#define OCUPADO 1
+#define COMIENDO 2
+
 /// AUTORES: DAVID AULADELL, MAURIZIO CARLOTTA, ABRAHAM ARMAS CORDERO
 
 /// -- DATOS -- ///
 struct Data
 {
-    bool TaburetesOcupados[3] {false}; //0 = 1º taburete , 1= 2º taburete, 2 = 3º taburete
-    bool waitingForClient;
+    char TaburetesOcupados[3]; //0 = 1º taburete , 1= 2º taburete, 2 = 3º taburete
     sf::Color ClienteACargar; // if( this== null) { waitingForclients = true} else {waitingForClients = false; }
+
+    public void SetDefault()
+    {
+        TaburetesOcupados[0](VACIO);
+        TaburetesOcupados[1](VACIO);
+        TaburetesOcupados[2](VACIO);
+        ClienteACargar = null;
+    }
+    public bool RestauranteLleno()
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            if(TaburetesOcupados[i] == VACIO)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 }
-
-/// Los filedescriptors se eliminan del codigo y los Pid_t pueden pasar a ser locales
-int fdS1[2]; // 0 lectura, 1escritura
-pid_t son1;
-int fdS2[2];
-pid_t son2;
-
+union semun
+{
+    int val;
+    struct semid_ds* buf;
+    unsigned short* array;
+}
 /// --- HIJO 1 ---
 
 /// Esta variable puede pasar a ser local del hijo entero y pasarse por parametro a las funciones necesarias
@@ -50,8 +85,6 @@ std::vector<sf::Color> pedidos; //pedidos de los clientes
 /// --- Control Clientes/Pedidos ---
 const int RANDOM_TABURETES = 1; // control orden aparicion de los clientes *** 0 = ordenado de arriba abajo : 1 = orden aleatorio
 const int RANDOM_PEDIDOS = 1;// control orden aparicion de los pedidos *** 0 ordenados segun XML : 1 = orden aleatorio
-
-bool waitingForClient = true;
 
 void TriggerAlarm(int param);
 void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
@@ -75,23 +108,35 @@ void CargarClienteFath(int param);
 
 int main()
 {
+    try
+    {
+        srand(time(NULL));
+        ///crear memoria compartida con Data
+        struct Data* shDatos;
+        int shmID = shmget(IPC_PRIVATE, sizeof(struct Data), IPC_CREAT | 0666);
+        if (shmID < 0) throw "La memoria compartida dio un problema";
+        shDatos = (struct Data*)shmat(shmID,NULL,0);
+        if (shDatos < 0) throw "El puntero a memoria compartida ha fallado";
+        shDatos->SetDefault();
 
-///crear memoria compartida con Data
-///crear un semaforo
+        int semID = semget(IPC_PRIVATE, 2, IPC_CREAT | 0666); //dos semaforos uno para lso recursos del hijo 1 y otro para el hijo 2
+        if (semID < 0) throw "Error al obtener semID"
+        union semun arg;
 
-///los datos del semaforo y de la memoria compartida las podemos poner en una variabel global o pasarlo todo por parametro a las funciones
+        int dbg = semctl(semID,0,GETALL, arg);
+        if(dbg < 0) throw "Error al objetener los semaforos para arg.array";
 
-    srand(time(NULL));
+        arg.val = 1;
+        dbg = semctl(semID,0,SETALL, arg);
+        if(dbg < 0) throw "Error al hacer set de todos los semaforos";
 
-    int statusPipeS1 = pipe(fdS1);
-    if (statusPipeS1 < 0) throw "error en pipe 1";
-
-    /// --- LLEGADA DE CLIENTES ---
-    if((son1 = fork()) == 0){
+        /// --- LLEGADA DE CLIENTES ---
+        pid_t son1;
+        if((son1 = fork()) == 0){
         /// Porque no directamente un SIGUSR1 y despues un sleep del tiempo que se necesite?
         signal(SIGUSR1, TriggerAlarm);
         signal(SIGALRM, CargarClienteSon);
-        close(fdS1[0]);
+
         rapidxml::xml_document<> xmlFile;
         std::ifstream file("config.xml");
         std::stringstream buffer;
@@ -125,10 +170,10 @@ int main()
         exit(0);
 
     }else {
-        int statusPipeS2 = pipe(fdS2);
-        if (statusPipeS2 < 0 ) throw "error en pipe 2";
 
     /// --- CLIENTES COMIENDO ---
+
+        pid_t son2;
         if((son2 = fork()) == 0){
             signal(SIGALRM, UnLoadClient);
             signal(SIGUSR2, UnLoadWhatClient);
@@ -144,7 +189,6 @@ int main()
             signal(SIGUSR1, CargarClienteFath);
             signal(SIGUSR2, VaciarMesa);
             alarm(1);
-            close(fdS1[1]);
             //VARIABLES
             sf::Event event;
 
@@ -272,9 +316,15 @@ int main()
             //matarlos
             kill(son1, SIGKILL);
             kill(son2, SIGKILL);
+            shmdt(shDatos);
+            shmctl(shmID, IPC_RMID, NULL);
             //exit
             return 0;
        }
+    }
+    }
+    catch (std::exception e){
+        std::cout << e.what();
     }
 }
 

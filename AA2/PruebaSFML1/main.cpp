@@ -28,13 +28,25 @@
 
 /// AUTORES: DAVID AULADELL, MAURIZIO CARLOTTA, ABRAHAM ARMAS CORDERO
 
+/// -- DATOS -- ///
+struct Data
+{
+    bool TaburetesOcupados[3] {false}; //0 = 1º taburete , 1= 2º taburete, 2 = 3º taburete
+    bool waitingForClient;
+    sf::Color ClienteACargar; // if( this== null) { waitingForclients = true} else {waitingForClients = false; }
+}
+
+/// Los filedescriptors se eliminan del codigo y los Pid_t pueden pasar a ser locales
 int fdS1[2]; // 0 lectura, 1escritura
 pid_t son1;
 int fdS2[2];
 pid_t son2;
 
 /// --- HIJO 1 ---
+
+/// Esta variable puede pasar a ser local del hijo entero y pasarse por parametro a las funciones necesarias
 std::vector<sf::Color> pedidos; //pedidos de los clientes
+
 /// --- Control Clientes/Pedidos ---
 const int RANDOM_TABURETES = 1; // control orden aparicion de los clientes *** 0 = ordenado de arriba abajo : 1 = orden aleatorio
 const int RANDOM_PEDIDOS = 1;// control orden aparicion de los pedidos *** 0 ordenados segun XML : 1 = orden aleatorio
@@ -45,6 +57,8 @@ void TriggerAlarm(int param);
 void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
 
 /// --- HIJO 2 ---
+
+/// Esta variable puede pasar a ser local del hijo entero y pasarse por parametro a las funciones necesarias
 std::queue<int> TabureteComiendo = std::queue<int>();//se ejecuta cuando el hijo 2 recibe un SIGUSR2
 
 void UnLoadWhatClient(int param);
@@ -61,6 +75,12 @@ void CargarClienteFath(int param);
 
 int main()
 {
+
+///crear memoria compartida con Data
+///crear un semaforo
+
+///los datos del semaforo y de la memoria compartida las podemos poner en una variabel global o pasarlo todo por parametro a las funciones
+
     srand(time(NULL));
 
     int statusPipeS1 = pipe(fdS1);
@@ -68,7 +88,7 @@ int main()
 
     /// --- LLEGADA DE CLIENTES ---
     if((son1 = fork()) == 0){
-
+        /// Porque no directamente un SIGUSR1 y despues un sleep del tiempo que se necesite?
         signal(SIGUSR1, TriggerAlarm);
         signal(SIGALRM, CargarClienteSon);
         close(fdS1[0]);
@@ -82,7 +102,7 @@ int main()
 
         rapidxml::xml_node<> *pRoot = xmlFile.first_node();
 
-
+        /// Este parser sigue siendo necesario
         for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
         {
             sf::Color newPedido;
@@ -110,12 +130,6 @@ int main()
 
     /// --- CLIENTES COMIENDO ---
         if((son2 = fork()) == 0){
-            //recibo señal SIGUSR2
-            //leo mi fdP2
-            //almaceno el asiento ocupado
-            //Hago un hijo que espera 5 segundos y em envia un alarm 5 segundos
-            //vaciar un asiento
-            //vuelta al loop de pausa
             signal(SIGALRM, UnLoadClient);
             signal(SIGUSR2, UnLoadWhatClient);
 
@@ -215,6 +229,7 @@ int main()
                     if(waitingForClient && !graficos.RestauranteLLeno())
                     {
                         kill(son1, SIGUSR1);
+                        /// podriamos hacer que esta variable estuviese en memoria compartida y que la leyese el hijo
                         waitingForClient = false;
                     }
                 }
@@ -286,7 +301,7 @@ void CargarClienteSon(int param)
             rgb = std::to_string(pedidos[rnd].r) +  std::to_string(pedidos[rnd].g) + std::to_string(pedidos[rnd].b);
             pedidos.erase(pedidos.begin() +rnd);
         }
-
+        /// no haria falta tener un parser con memoria compartida
         n = rgb.c_str();
         write(fdS1[1],n,MAX_BUFFER_RGB);
         kill(getppid(), SIGUSR1);
@@ -414,7 +429,7 @@ void CargarClienteFath(int param){
     size_t is = read(fdS1[0],buffer, MAX_BUFFER_RGB);
 
     int control = 0;
-
+///no haria falta este parser
   for(size_t x {0}; x < 3; x++)
     {
 

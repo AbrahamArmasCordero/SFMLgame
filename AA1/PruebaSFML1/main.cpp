@@ -191,13 +191,15 @@ int main()
                                 {
                                     if(graficos.manoDerecha.getFillColor() == graficos.aPedidosADibujar[i].getFillColor() || graficos.manoIzquierda.getFillColor() == graficos.aPedidosADibujar[i].getFillColor())
                                     {
-                                        buffer = std::to_string(i);
-                                        graficos.aTaburetesADibujar[i].setFillColor(TABURETE_COMIENDO);
-                                        write(fdS2[1],buffer.c_str(),1);
-                                        kill(son2,SIGUSR2);
+                                        if(!graficos.TabureteComiendo(i))
+                                        {
+                                            buffer = std::to_string(i);
+                                            graficos.aTaburetesADibujar[i].setFillColor(TABURETE_COMIENDO);
+                                            write(fdS2[1],buffer.c_str(),1);
+                                            kill(son2,SIGUSR2);
 
-                                        graficos.DejaComida(graficos.aPedidosADibujar[i].getFillColor());
-
+                                            graficos.DejaComida(graficos.aPedidosADibujar[i].getFillColor());
+                                        }
 
                                     }
 

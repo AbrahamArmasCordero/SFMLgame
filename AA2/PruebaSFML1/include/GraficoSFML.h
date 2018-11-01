@@ -34,7 +34,6 @@ class GraficoSFML
 
         int tiempoRestante;
         int numClientesRestantes;
-        bool stoolState[3];
         sf::Vector2f posicionJugador;
 
         GraficoSFML();

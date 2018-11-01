@@ -14,10 +14,6 @@ GraficoSFML::GraficoSFML():posicionJugador(sf::Vector2f(385.f,285.f)),jugador(30
     aOrigenDispensadores.push_back(sf::Vector2f(650, 255));
     aOrigenDispensadores.push_back(sf::Vector2f(650, 425));
 
-    stoolState[0] = false;
-    stoolState[1] = false;
-    stoolState[2] = false;
-
     InitContadorClientes();
     InitContadorTiempo();
     InitTaburetes();

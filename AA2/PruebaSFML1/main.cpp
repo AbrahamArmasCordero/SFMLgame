@@ -183,6 +183,10 @@ void VaciarMesa(Data*, int, sembuf*);
 
 void CargarClienteFath(int param);
 
+int DrawNewClient(sf::Color color , Data *shData, int semId, struct sembuf *tempSemBuf);
+std::vector<sf::Color> LoadXML();
+sf::Color GetNewClientColor(std::vector<sf::Color> &pedidos);
+
 int main()
 {
     try
@@ -214,49 +218,48 @@ int main()
         /// --- LLEGADA DE CLIENTES ---
         pid_t son1;
         if((son1 = fork()) == 0){
-        /// Porque no directamente un SIGUSR1 y despues un sleep del tiempo que se necesite?
-        std::vector<sf::Color> pedidos; //pedidos de los clientes
-        //signal(SIGUSR1, TriggerAlarm);
-        //signal(SIGALRM, CargarClienteSon);
+        std::vector<sf::Color> pedidos = LoadXML(); //pedidos de los clientes
 
-        rapidxml::xml_document<> xmlFile;
-        std::ifstream file("config.xml");
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        file.close();
-        std::string content(buffer.str());
-        xmlFile.parse<0>(&content[0]);
-
-        rapidxml::xml_node<> *pRoot = xmlFile.first_node();
-
-        for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
-        {
-            sf::Color newPedido;
-
-            for (rapidxml::xml_attribute<> *pAttr = pNode->first_attribute(); pAttr; pAttr = pAttr->next_attribute())
+            for (int i = 0; i < NUM_MESAS; i++)
             {
-                if(pAttr->name()[0] == 'R')
-                    newPedido.r = std::atoi(pAttr->value());
-                else if(pAttr->name()[0] == 'G')
-                    newPedido.g = std::atoi(pAttr->value());
-                else if(pAttr->name()[0] == 'B')
-                    newPedido.b = std::atoi(pAttr->value());
+                shDatos->SetTaburetes(i,ESPERA,semID,tmpSemBuf);
+                sf::Color nuevoColor= GetNewClientColor(pedidos);
+
+                if (fork() == 0) /// Bucle inicial.
+                {
+                    sleep(TIME_TODO*(i+1));
+                    shDatos->SetNewClientColor(nuevoColor,semID,tmpSemBuf);
+
+                    exit(3);
+                }
             }
 
-            pedidos.push_back(newPedido);
+
+            while(1)
+            {
+                if (!shDatos->RestauranteLleno() && pedidos.size() > 0)
+                {
+                    shDatos->SetTaburetes(shDatos->GetTabureteVacio(semID,tmpSemBuf),ESPERA,semID,tmpSemBuf);
+                    sf::Color nuevoColor= GetNewClientColor(pedidos);
+
+                    if (fork() == 0)
+                    {
+                        sleep(TIME_TODO);
+                        shDatos->SetNewClientColor(nuevoColor,semID,tmpSemBuf);
+                        exit(0);
+                    }
+                }
+            }
+            exit(0);
+
         }
 
-        while(1){ pause(); }
-
-        exit(0);
-
-    }
         else {
         /// --- CLIENTES COMIENDO ---
             pid_t son2;
             if((son2 = fork()) == 0){
 
-                std::queue<int> TabureteComiendo = std::queue<int>();
+            /*    std::queue<int> TabureteComiendo = std::queue<int>();
                 while(1)
                 {
                     //si el restaurante esta vacio o estan todos comiendo no lo hagas
@@ -264,7 +267,7 @@ int main()
                     {
                         UnLoadWhatClient(shDatos, TabureteComiendo, semID, tmpSemBuf);
                     }
-                }
+                }*/
             }
             else{
                 sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
@@ -363,11 +366,11 @@ int main()
                             mouseRightButtPressed = false;
                         }
 
-                        /*if (shDatos->GetNewClientColor() != sf::Color().Black)
+                         if (shDatos->GetNewClientColor(semID,tmpSemBuf) != sf::Color().Black)
                         {
-                            shDatos->SetTaburetes(DrawNewClient(shDatos->GetNewClientColor()), OCUPADO, semID,tmpSemBuf);
-                            shDatos->SetNewClientColor(sf::Color().Black, semID,t mpSemBuf);
-                        }*/
+                            shDatos->SetTaburetes(DrawNewClient(shDatos->GetNewClientColor(semID,tmpSemBuf),shDatos,semID, tmpSemBuf), OCUPADO, semID,tmpSemBuf);
+                            shDatos->SetNewClientColor(sf::Color().Black,semID,tmpSemBuf);
+                        }
                     }
 
                     ///DRAW
@@ -450,7 +453,7 @@ void CargarClienteSon(int param, std::vector<sf::Color>& pedidos)
 
     }*/
 }
-
+/*
 /// --- HIJO 2 ---
 void UnLoadWhatClient(struct Data* datos, std::queue<int> &TabureteComiendo, int semID, sembuf *sBuf)
 {
@@ -472,6 +475,7 @@ void UnLoadWhatClient(struct Data* datos, std::queue<int> &TabureteComiendo, int
         }
     }
 }
+*/
 /// --- PADRE ---
 void ClockAlarm(int param)
 {
@@ -518,7 +522,7 @@ void DrawClient(sf::Color color)
         }
     }
 }
-
+/*
 void VaciarMesa(Data *datos, int semID, sembuf* sBuf)
 {
     for(int i = 0; i < 3; ++i)
@@ -532,7 +536,7 @@ void VaciarMesa(Data *datos, int semID, sembuf* sBuf)
         }
     }
 }
-
+*/
 void CargarClienteFath(int param)
 {
 //SIG1
@@ -568,3 +572,95 @@ void CargarClienteFath(int param)
     DrawClient(auxCol);
 }
 
+
+/// --- HIJO 1 ---
+
+std::vector<sf::Color> LoadXML()
+{
+        std::vector<sf::Color> toReturn;
+        rapidxml::xml_document<> xmlFile;
+        std::ifstream file("config.xml");
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        file.close();
+        std::string content(buffer.str());
+        xmlFile.parse<0>(&content[0]);
+
+        rapidxml::xml_node<> *pRoot = xmlFile.first_node();
+
+        for(rapidxml::xml_node<> *pNode = pRoot->first_node();pNode; pNode = pNode->next_sibling())
+        {
+            sf::Color newPedido;
+
+            for (rapidxml::xml_attribute<> *pAttr = pNode->first_attribute(); pAttr; pAttr = pAttr->next_attribute())
+            {
+                if(pAttr->name()[0] == 'R')
+                    newPedido.r = std::atoi(pAttr->value());
+                else if(pAttr->name()[0] == 'G')
+                    newPedido.g = std::atoi(pAttr->value());
+                else if(pAttr->name()[0] == 'B')
+                    newPedido.b = std::atoi(pAttr->value());
+            }
+
+            toReturn.push_back(newPedido);
+        }
+
+        return toReturn;
+}
+
+sf::Color GetNewClientColor(std::vector<sf::Color> &pedidos)
+{
+    sf::Color toReturn = sf::Color().Black;
+
+    if (!pedidos.empty())
+    {
+        if(RANDOM_PEDIDOS == 0)
+        {
+            toReturn = pedidos.front();
+            pedidos.erase(pedidos.begin());
+        }
+        else
+        {
+            int rnd = rand() % pedidos.size();
+            toReturn = pedidos[rnd];
+            pedidos.erase(pedidos.begin() +rnd);
+        }
+    }
+
+    return toReturn;
+}
+
+int DrawNewClient(sf::Color color , Data *shData, int semId, struct sembuf *tempSemBuf)
+{
+    if (RANDOM_TABURETES == 0)
+    {
+        int i = 0;
+
+        while(i  < 4 && shData->GetTabureteState(i,semId,tempSemBuf) != ESPERA)
+        {
+            i++;
+        }
+
+        if (i < 3)
+        {
+            graficos.OcupaTaburete(i);
+            graficos.aPedidosADibujar[i].setFillColor(color);
+
+            return i;
+        }
+    }
+    else
+    {
+        std::vector<int>  emptyChair = std::vector<int>();
+
+        for(int i = 0; i < NUM_MESAS; i++)
+        {
+            if (shData->GetTabureteState(i,semId,tempSemBuf) == ESPERA) emptyChair.push_back(i);
+        }
+
+        int nuevoSitio = rand() % emptyChair.size();
+        graficos.OcupaTaburete(emptyChair[nuevoSitio]);
+        graficos.aPedidosADibujar[emptyChair[nuevoSitio]].setFillColor(color);
+        return emptyChair[nuevoSitio];
+    }
+}

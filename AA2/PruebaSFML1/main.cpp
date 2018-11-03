@@ -64,28 +64,59 @@ public:
         tabureteState[2] = VACIO;
         colorNuevoPedido = sf::Color().Black;
     }
-    bool RestauranteLleno()
+    bool RestauranteLleno(int &semID, struct sembuf *tmpSemBuf)
     {
+        tmpSemBuf->sem_op = -1;
+        semop(semID, tmpSemBuf, 1);
         for (int i = 0; i < 3; ++i)
         {
             if(tabureteState[i] == VACIO)
             {
+                tmpSemBuf->sem_op = 1;
+                semop(semID, tmpSemBuf, 1);
                 return false;
             }
         }
+        tmpSemBuf->sem_op = 1;
+        semop(semID, tmpSemBuf, 1);
         return true;
     }
-    bool AlguienEmpezando()
+    bool AlguienEmpezando(int &semID, struct sembuf *tmpSemBuf)
     {
+        tmpSemBuf->sem_op = -1;
+        semop(semID, tmpSemBuf, 1);
         for (int i = 0; i < 3; ++i)
         {
             if(tabureteState[i] == EMPEZANDO)
             {
+                tmpSemBuf->sem_op = 1;
+                semop(semID, tmpSemBuf, 1);
                 return true;
             }
         }
+        tmpSemBuf->sem_op = 1;
+        semop(semID, tmpSemBuf, 1);
         return false;
     }
+
+    bool AlguienSatisfecho(int &semID, struct sembuf *tmpSemBuf)
+    {
+        tmpSemBuf->sem_op = -1;
+        semop(semID, tmpSemBuf, 1);
+        for (int i = 0; i < 3; ++i)
+        {
+            if(tabureteState[i] == ACABADO)
+            {
+                tmpSemBuf->sem_op = 1;
+                semop(semID, tmpSemBuf, 1);
+                return true;
+            }
+        }
+        tmpSemBuf->sem_op = 1;
+        semop(semID, tmpSemBuf, 1);
+        return false;
+    }
+
 
     void SetNewClientColor(sf::Color color, int &SemID, struct sembuf *tmpSemBuf)
     {
@@ -102,6 +133,7 @@ public:
         i = semop(SemID, tmpSemBuf, 1);
         if(i < 0 ) std::cout << "Soy un bug del Signal de SetClient" << std::endl;
     }
+
     void SetTaburetes(int Index, int Estado, int &SemID, struct sembuf *tmpSemBuf)
     {
         tmpSemBuf->sem_op = -1;
@@ -144,11 +176,37 @@ public:
 
     int GetTabureteVacio(int semID, sembuf* sBuf)
     {
+        sBuf->sem_op = -1;
+        semop(semID, sBuf, 1);
         for(int i = 0;i < 3; i++)
         {
 
-            if (tabureteState[i] == VACIO) return i;
+            if (tabureteState[i] == VACIO)
+            {
+                sBuf->sem_op = 1;
+                semop(semID, sBuf, 1);
+                return i;
+            }
         }
+        sBuf->sem_op = 1;
+        semop(semID, sBuf, 1);
+    }
+
+    int GetClienteSatisfecho(int semID,sembuf* tmpSemBuf)
+    {
+        tmpSemBuf->sem_op = -1;
+        semop(semID, tmpSemBuf, 1);
+        for(int i = 0;i < 3; i++)
+        {
+            if (tabureteState[i] == ACABADO)
+            {
+                tmpSemBuf->sem_op = 1;
+                semop(semID, tmpSemBuf, 1);
+                return i;
+            }
+        }
+        tmpSemBuf->sem_op = 1;
+        semop(semID, tmpSemBuf, 1);
     }
 };
 
@@ -164,28 +222,15 @@ const int RANDOM_TABURETES = 1; // control orden aparicion de los clientes *** 0
 const int RANDOM_PEDIDOS = 1;// control orden aparicion de los pedidos *** 0 ordenados segun XML : 1 = orden aleatorio
 
 /// --- HIJO 1 ---
-void TriggerAlarm(int param);
-void CargarClienteSon(int param);//se ejecuta cuando el hijo 1 recibe un SIGALRM
-
-/// --- HIJO 2 ---
-
-/// Esta variable puede pasar a ser local del hijo entero y pasarse por parametro a las funciones necesarias
-
-void UnLoadWhatClient(struct Data*, std::queue<int> &, int, sembuf*);
-
-/// --- PADRE ---
-GraficoSFML graficos;
-
-void ClockAlarm(int param); //se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
-void DrawClient(sf::Color color);
-
-void VaciarMesa(Data*, int, sembuf*);
-
-void CargarClienteFath(int param);
-
 int DrawNewClient(sf::Color color , Data *shData, int semId, struct sembuf *tempSemBuf);
 std::vector<sf::Color> LoadXML();
 sf::Color GetNewClientColor(std::vector<sf::Color> &pedidos);
+
+/// --- HIJO 2 ---
+void UnLoadWhatClient(struct Data*, int, sembuf*);
+/// --- PADRE ---
+void ClockAlarm(int param); //se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
+GraficoSFML graficos;
 
 int main()
 {
@@ -237,7 +282,7 @@ int main()
 
             while(1)
             {
-                if (!shDatos->RestauranteLleno() && pedidos.size() > 0)
+                if (!shDatos->RestauranteLleno(semID,tmpSemBuf) && pedidos.size() > 0)
                 {
                     shDatos->SetTaburetes(shDatos->GetTabureteVacio(semID,tmpSemBuf),ESPERA,semID,tmpSemBuf);
                     sf::Color nuevoColor= GetNewClientColor(pedidos);
@@ -257,28 +302,28 @@ int main()
         else {
         /// --- CLIENTES COMIENDO ---
             pid_t son2;
-            if((son2 = fork()) == 0){
-
-            /*    std::queue<int> TabureteComiendo = std::queue<int>();
+            if((son2 = fork()) == 0)
+            {
                 while(1)
                 {
-                    //si el restaurante esta vacio o estan todos comiendo no lo hagas
-                    if(shDatos->AlguienEmpezando())
+                    if(shDatos->AlguienEmpezando(semID,tmpSemBuf))
                     {
-                        UnLoadWhatClient(shDatos, TabureteComiendo, semID, tmpSemBuf);
+                        UnLoadWhatClient(shDatos, semID, tmpSemBuf);
                     }
-                }*/
+                }
             }
-            else{
+            else
+            {
+             /// Padre
                 sf::RenderWindow window(sf::VideoMode(WINDOW_H,WINDOW_V), TITLE);
 
+
+                ///control de tiempo
                 signal(SIGALRM,ClockAlarm);
-                //signal(SIGUSR1, CargarClienteFath);
-                //signal(SIGUSR2, VaciarMesa);
                 alarm(1);
+
                 //VARIABLES
                 sf::Event event;
-
                 bool mouseLeftButtPressed = false;
                 bool mouseRightButtPressed = false;
 
@@ -328,6 +373,7 @@ int main()
 
                                     }
                                 }
+
                                 for(int i = 0; i < 3; i++)
                                 {
                                     //Comprobamos si el jugador ha clickado sobre un cliente y tiene la comida que este necesita
@@ -335,37 +381,42 @@ int main()
                                     {
                                         if(graficos.manoDerecha.getFillColor() == graficos.aPedidosADibujar[i].getFillColor() || graficos.manoIzquierda.getFillColor() == graficos.aPedidosADibujar[i].getFillColor())
                                         {
-                                            if(!graficos.TabureteComiendo(i))
+                                            if(shDatos->GetTabureteState(i,semID,tmpSemBuf) == OCUPADO)
                                             {
-                                                /*sembuf *tmpSemBuf;
-                                                tmpSemBuf->sem_num = 1;
-                                                tmpSemBuf->sem_flg = IPC_NOWAIT;
-
-                                                tmpSemBuf->sem_op = -1;*/
-                                                int i = semop(semID,tmpSemBuf,1);
-                                                if(i < 0)
-                                                {
-                                                    graficos.aTaburetesADibujar[i].setFillColor(TABURETE_COMIENDO);
-
-                                                    shDatos->SetTaburetes(i, EMPEZANDO, semID, tmpSemBuf);
-
-                                                    graficos.DejaComida(graficos.aPedidosADibujar[i].getFillColor());
-
-                                                    /*tmpSemBuf->sem_op = 1;
-                                                    semop(semID,tmpSemBuf,1);*/
-                                                }
+                                                shDatos->SetTaburetes(i, EMPEZANDO, semID, tmpSemBuf);
+                                                graficos.aTaburetesADibujar[i].setFillColor(TABURETE_COMIENDO);
+                                                graficos.DejaComida(graficos.aPedidosADibujar[i].getFillColor());
                                             }
                                         }
                                     }
                                 }
                                 mouseLeftButtPressed = false;
                         }
+
                         else if(mouseRightButtPressed)
                         {
                             graficos.TiraComida();
                             mouseRightButtPressed = false;
                         }
 
+                        ///sale cliente
+                        if(shDatos->AlguienSatisfecho(semID,tmpSemBuf))
+                        {
+                            int i = shDatos->GetClienteSatisfecho(semID,tmpSemBuf);
+                            graficos.aTaburetesADibujar[i].setFillColor(TABURETE_VACIO);
+                            graficos.aPedidosADibujar[i].setFillColor(sf::Color().Black);
+                            shDatos->SetTaburetes(i,VACIO,semID,tmpSemBuf);
+                            graficos.numClientesRestantes --;
+
+                            if(graficos.numClientesRestantes == 0)
+                            {
+                                std::cout << "All clients are satisfied, Good Job , Bye!" << std::endl;
+                                sleep(2);
+                                window.close();
+                            }
+                        }
+
+                        ///entra cliente
                          if (shDatos->GetNewClientColor(semID,tmpSemBuf) != sf::Color().Black)
                         {
                             shDatos->SetTaburetes(DrawNewClient(shDatos->GetNewClientColor(semID,tmpSemBuf),shDatos,semID, tmpSemBuf), OCUPADO, semID,tmpSemBuf);
@@ -404,8 +455,12 @@ int main()
 
                     }
 
-                    if (graficos.tiempoRestante <= 0 || graficos.numClientesRestantes == 0)
-                    window.close();
+                    if (graficos.tiempoRestante <= 0)
+                    {
+                        std::cout << "time Out, Bye!" << std::endl;
+                        sleep(2);
+                        window.close();
+                    }
                 }
                 //esperar a todos los hijos
                 //matarlos
@@ -423,155 +478,31 @@ int main()
     }
 }
 
-/// --- HIJO 1 ---
-void TriggerAlarm(int param)
-{
-    alarm(TIME_TODO);
-}
-
-void CargarClienteSon(int param, std::vector<sf::Color>& pedidos)
-{
-    /*if (!pedidos.empty())
-    {
-        //char* n = new char[MAX_BUFFER_RGB];
-        std::string rgb;
-        if(RANDOM_PEDIDOS == 0)
-        {
-            rgb = std::to_string(pedidos.front().r) +  std::to_string(pedidos.front().g) + std::to_string(pedidos.front().b);
-            pedidos.erase(pedidos.begin());
-        }
-        else
-        {
-            int rnd = rand() % pedidos.size();
-            rgb = std::to_string(pedidos[rnd].r) +  std::to_string(pedidos[rnd].g) + std::to_string(pedidos[rnd].b);
-            pedidos.erase(pedidos.begin() +rnd);
-        }
-        /// no haria falta tener un parser con memoria compartida
-        n = rgb.c_str();
-        write(fdS1[1],n,MAX_BUFFER_RGB);
-        kill(getppid(), SIGUSR1);
-
-    }*/
-}
-/*
 /// --- HIJO 2 ---
-void UnLoadWhatClient(struct Data* datos, std::queue<int> &TabureteComiendo, int semID, sembuf *sBuf)
+void UnLoadWhatClient(struct Data* datos,int semID, sembuf *sBuf)
 {
-    pid_t pid;
+    int ctrl = -1;
     for(int i = 0; i < NUM_MESAS; ++i)
     {
-        if(datos->GetTabureteState(i) == EMPEZANDO)
-        {
-            datos->SetTaburetes(i, COMIENDO, semID, sBuf);
-            TabureteComiendo.push(i);
+        if(datos->GetTabureteState(i,semID,sBuf) == EMPEZANDO)
+        {   ctrl = i;
 
-            if(pid = fork() == 0)
+            datos->SetTaburetes(i, COMIENDO, semID, sBuf);
+            if(fork() == 0)
             {
-                sleep(5);
-                datos->SetTaburetes(TabureteComiendo.front(), ACABADO, semID, sBuf);
-                TabureteComiendo.pop();
+                sleep(TIME_TODO);
+                datos->SetTaburetes(ctrl, ACABADO, semID, sBuf);
                 exit(0);
             }
         }
     }
 }
-*/
 /// --- PADRE ---
 void ClockAlarm(int param)
 {
     graficos.tiempoRestante--;
     alarm(1);
 }
-
-void DrawClient(sf::Color color)
-{
-     //Llenamos el taburete en nuestra array
-     if(!graficos.RestauranteLLeno())
-    {
-        //Llenamos el taburete en nuestra array
-
-        if (RANDOM_TABURETES == 0)
-        {
-            int i = 0;
-
-            while(i  < 4 && graficos.TabureteOcupado(i))
-            {
-                i++;
-            }
-
-            if (i < 3)
-            {
-                graficos.OcupaTaburete(i);
-                graficos.aPedidosADibujar[i].setFillColor(color);
-                //waitingForClient = true;
-            }
-        }
-        else
-        {
-            std::vector<int>  emptyChair = std::vector<int>();
-
-            for(int i = 0; i < NUM_MESAS; i++)
-            {
-                if (!graficos.TabureteOcupado(i)) emptyChair.push_back(i);
-            }
-
-            int nuevoSitio = rand() % emptyChair.size();
-            graficos.OcupaTaburete(emptyChair[nuevoSitio]);
-            graficos.aPedidosADibujar[emptyChair[nuevoSitio]].setFillColor(color);
-            //waitingForClient = true;
-        }
-    }
-}
-/*
-void VaciarMesa(Data *datos, int semID, sembuf* sBuf)
-{
-    for(int i = 0; i < 3; ++i)
-    {
-        if(datos->GetTabureteState(i) == ACABADO)
-        {
-            datos->SetTaburetes(i, VACIO, semID, sBuf);
-            graficos.numClientesRestantes--;
-            graficos.aTaburetesADibujar[i].setFillColor(TABURETE_VACIO);
-            graficos.aPedidosADibujar[i].setFillColor(PEDIDO_VACIO);
-        }
-    }
-}
-*/
-void CargarClienteFath(int param)
-{
-//SIG1
-
-    sf::Color auxCol = sf::Color::White;
-    std::string aux;
-    char * buffer = new char[MAX_BUFFER_RGB];
-    int colInt[3];
-
-    //Leemos los 9 numeros que componen el color de la comida
-    //size_t is = read(fdS1[0],buffer, MAX_BUFFER_RGB);
-
-    int control = 0;
-///no haria falta este parser
-  for(size_t x {0}; x < 3; x++)
-    {
-
-        if(buffer[control] == '0')
-        {
-            aux = "0";
-            control++;
-
-        }
-        else
-        {
-            aux = {buffer[control], buffer[control+1], buffer[control+2]};
-            control += 3;
-        }
-          colInt[x] = std::stoi(aux);
-    }
-
-    auxCol = sf::Color(colInt[0], colInt[1], colInt[2], 255);
-    DrawClient(auxCol);
-}
-
 
 /// --- HIJO 1 ---
 

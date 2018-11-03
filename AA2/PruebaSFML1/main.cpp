@@ -57,66 +57,74 @@ private:
     sf::Color colorNuevoPedido;
 
 public:
-    void SetDefault()
+    void SetDefault() //un setter a default de todos los atributos
     {
         tabureteState[0] = VACIO;
         tabureteState[1] = VACIO;
         tabureteState[2] = VACIO;
         colorNuevoPedido = sf::Color().Black;
     }
-    bool RestauranteLleno(int &semID, struct sembuf *tmpSemBuf)
+
+    bool RestauranteLleno(int &semID, struct sembuf *tmpSemBuf) //retorna false si hay taburetes vacios
     {
-        tmpSemBuf->sem_op = -1;
-        semop(semID, tmpSemBuf, 1);
         for (int i = 0; i < 3; ++i)
         {
+            tmpSemBuf->sem_op = -1;
+            semop(semID, tmpSemBuf, 1);
+
             if(tabureteState[i] == VACIO)
             {
                 tmpSemBuf->sem_op = 1;
                 semop(semID, tmpSemBuf, 1);
                 return false;
             }
+            //si retorna fasle aqui no ahce signal
+            tmpSemBuf->sem_op = 1;
+            semop(semID, tmpSemBuf, 1);
         }
-        tmpSemBuf->sem_op = 1;
-        semop(semID, tmpSemBuf, 1);
+
         return true;
     }
-    bool AlguienEmpezando(int &semID, struct sembuf *tmpSemBuf)
+
+    bool AlguienEmpezando(int &semID, struct sembuf *tmpSemBuf) //retorna true si alguien esta empezando se usa para evitar usar la funcion de descarga de clientes innecesariamente
     {
-        tmpSemBuf->sem_op = -1;
-        semop(semID, tmpSemBuf, 1);
         for (int i = 0; i < 3; ++i)
         {
+            tmpSemBuf->sem_op = -1;
+            semop(semID, tmpSemBuf, 1);
+
             if(tabureteState[i] == EMPEZANDO)
             {
                 tmpSemBuf->sem_op = 1;
                 semop(semID, tmpSemBuf, 1);
                 return true;
             }
+
+            tmpSemBuf->sem_op = 1;
+            semop(semID, tmpSemBuf, 1);
         }
-        tmpSemBuf->sem_op = 1;
-        semop(semID, tmpSemBuf, 1);
         return false;
     }
 
     bool AlguienSatisfecho(int &semID, struct sembuf *tmpSemBuf)
     {
-        tmpSemBuf->sem_op = -1;
-        semop(semID, tmpSemBuf, 1);
         for (int i = 0; i < 3; ++i)
         {
+            tmpSemBuf->sem_op = -1;
+            semop(semID, tmpSemBuf, 1);
+
             if(tabureteState[i] == ACABADO)
             {
                 tmpSemBuf->sem_op = 1;
                 semop(semID, tmpSemBuf, 1);
                 return true;
             }
+
+            tmpSemBuf->sem_op = 1;
+            semop(semID, tmpSemBuf, 1);
         }
-        tmpSemBuf->sem_op = 1;
-        semop(semID, tmpSemBuf, 1);
         return false;
     }
-
 
     void SetNewClientColor(sf::Color color, int &SemID, struct sembuf *tmpSemBuf)
     {
@@ -148,6 +156,7 @@ public:
 
 
     }
+
     sf::Color GetNewClientColor(int semID, sembuf* sBuf)
     {
         sBuf->sem_op = -1;
@@ -176,10 +185,10 @@ public:
 
     int GetTabureteVacio(int semID, sembuf* sBuf)
     {
-        sBuf->sem_op = -1;
-        semop(semID, sBuf, 1);
         for(int i = 0;i < 3; i++)
         {
+            sBuf->sem_op = -1;
+            semop(semID, sBuf, 1);
 
             if (tabureteState[i] == VACIO)
             {
@@ -187,26 +196,28 @@ public:
                 semop(semID, sBuf, 1);
                 return i;
             }
+            sBuf->sem_op = 1;
+            semop(semID, sBuf, 1);
         }
-        sBuf->sem_op = 1;
-        semop(semID, sBuf, 1);
+        return -1;
     }
 
     int GetClienteSatisfecho(int semID,sembuf* tmpSemBuf)
     {
-        tmpSemBuf->sem_op = -1;
-        semop(semID, tmpSemBuf, 1);
         for(int i = 0;i < 3; i++)
         {
+        tmpSemBuf->sem_op = -1;
+        semop(semID, tmpSemBuf, 1);
             if (tabureteState[i] == ACABADO)
             {
                 tmpSemBuf->sem_op = 1;
                 semop(semID, tmpSemBuf, 1);
                 return i;
             }
-        }
         tmpSemBuf->sem_op = 1;
         semop(semID, tmpSemBuf, 1);
+        }
+        return -1;
     }
 };
 
@@ -222,13 +233,13 @@ const int RANDOM_TABURETES = 1; // control orden aparicion de los clientes *** 0
 const int RANDOM_PEDIDOS = 1;// control orden aparicion de los pedidos *** 0 ordenados segun XML : 1 = orden aleatorio
 
 /// --- HIJO 1 ---
-int DrawNewClient(sf::Color color , Data *shData, int semId, struct sembuf *tempSemBuf);
 std::vector<sf::Color> LoadXML();
 sf::Color GetNewClientColor(std::vector<sf::Color> &pedidos);
 
 /// --- HIJO 2 ---
 void UnLoadWhatClient(struct Data*, int, sembuf*);
 /// --- PADRE ---
+int DrawNewClient(sf::Color color , Data *shData, int semId, struct sembuf *tempSemBuf);
 void ClockAlarm(int param); //se triggerea cuando el padre le panda al hijo 0 un SIGUSR1
 GraficoSFML graficos;
 
@@ -268,8 +279,10 @@ int main()
             for (int i = 0; i < NUM_MESAS; i++)
             {
                 shDatos->SetTaburetes(i,ESPERA,semID,tmpSemBuf);
-                sf::Color nuevoColor= GetNewClientColor(pedidos);
+                sf::Color nuevoColor = GetNewClientColor(pedidos);
 
+                /// Este primer bucle hace 3 hijos con un sleep de 5 10 y 15 segundos
+                /// despues los sleeps ponen el color dentro de la memoria compartida para que el padre lo lea
                 if (fork() == 0) /// Bucle inicial.
                 {
                     sleep(TIME_TODO*(i+1));
@@ -282,6 +295,8 @@ int main()
 
             while(1)
             {
+
+                //si el restaurante no esta lleno el hijo empieza a enviar un cliente
                 if (!shDatos->RestauranteLleno(semID,tmpSemBuf) && pedidos.size() > 0)
                 {
                     shDatos->SetTaburetes(shDatos->GetTabureteVacio(semID,tmpSemBuf),ESPERA,semID,tmpSemBuf);
@@ -319,7 +334,9 @@ int main()
 
 
                 ///control de tiempo
+                graficos.tiempoRestante--;
                 signal(SIGALRM,ClockAlarm);
+
                 alarm(1);
 
                 //VARIABLES
@@ -399,9 +416,10 @@ int main()
                             mouseRightButtPressed = false;
                         }
 
-                        ///sale cliente
+                        ///SI hay alguien satisfecho
                         if(shDatos->AlguienSatisfecho(semID,tmpSemBuf))
                         {
+                            //Cojemos al que esta satisfecho
                             int i = shDatos->GetClienteSatisfecho(semID,tmpSemBuf);
                             graficos.aTaburetesADibujar[i].setFillColor(TABURETE_VACIO);
                             graficos.aPedidosADibujar[i].setFillColor(sf::Color().Black);

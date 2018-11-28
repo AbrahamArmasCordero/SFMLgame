@@ -19,6 +19,7 @@
 					<Add library="../SFML-2.5.0/lib/libsfml-graphics-d.so" />
 					<Add library="../SFML-2.5.0/lib/libsfml-system-d.so" />
 					<Add library="../SFML-2.5.0/lib/libsfml-window-d.so" />
+					<Add library="../SFML-2.5.0/lib/libsfml-network.so" />
 				</Linker>
 			</Target>
 			<Target title="Release">

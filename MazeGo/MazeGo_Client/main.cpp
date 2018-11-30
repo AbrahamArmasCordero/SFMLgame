@@ -22,6 +22,19 @@ int main()
     else
     {
         std::cout << "Good job \n";
+
+        char data[100]{"POOPOPOPOP"};
+
+        sf::Socket::Status status = socket.send(data,100);
+
+        if (status != sf::Socket::Done)
+        {
+            std::cout << "end";
+        }
+        else
+        {
+            std::cout << "Well Done!";
+        }
     }
     return 0;
 }

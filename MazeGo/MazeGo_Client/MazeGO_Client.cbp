@@ -2,7 +2,7 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="PruebaSFML1" />
+		<Option title="MazeGo_Client" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
@@ -19,7 +19,7 @@
 					<Add library="../SFML-2.5.0/lib/libsfml-graphics-d.so" />
 					<Add library="../SFML-2.5.0/lib/libsfml-system-d.so" />
 					<Add library="../SFML-2.5.0/lib/libsfml-window-d.so" />
-					<Add library="../SFML-2.5.0/lib/libsfml-network.so" />
+					<Add library="../SFML-2.5.0/lib/libsfml-network-d.so" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -33,6 +33,10 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="../SFML-2.5.0/lib/libsfml-graphics.so" />
+					<Add library="../SFML-2.5.0/lib/libsfml-network.so" />
+					<Add library="../SFML-2.5.0/lib/libsfml-system.so" />
+					<Add library="../SFML-2.5.0/lib/libsfml-window.so" />
 				</Linker>
 			</Target>
 		</Build>

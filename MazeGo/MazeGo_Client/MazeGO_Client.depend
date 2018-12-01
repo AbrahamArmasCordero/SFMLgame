@@ -417,3 +417,91 @@
 	<SFML/Graphics/Drawable.hpp>
 	<SFML/Window/GlResource.hpp>
 
+1543432152 source:/home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/MazeGo_Client/main.cpp
+	<iostream>
+	<SFML/Graphics.hpp>
+	<SFML/Network.hpp>
+	"../XML/rapidxml.hpp"
+	"GraficoSFML.h"
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network.hpp
+	<SFML/System.hpp>
+	<SFML/Network/Ftp.hpp>
+	<SFML/Network/Http.hpp>
+	<SFML/Network/IpAddress.hpp>
+	<SFML/Network/Packet.hpp>
+	<SFML/Network/Socket.hpp>
+	<SFML/Network/SocketHandle.hpp>
+	<SFML/Network/SocketSelector.hpp>
+	<SFML/Network/TcpListener.hpp>
+	<SFML/Network/TcpSocket.hpp>
+	<SFML/Network/UdpSocket.hpp>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/Ftp.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/Network/TcpSocket.hpp>
+	<SFML/System/NonCopyable.hpp>
+	<SFML/System/Time.hpp>
+	<string>
+	<vector>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/Export.hpp
+	<SFML/Config.hpp>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/TcpSocket.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/Network/Socket.hpp>
+	<SFML/System/Time.hpp>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/Socket.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/Network/SocketHandle.hpp>
+	<SFML/System/NonCopyable.hpp>
+	<vector>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/SocketHandle.hpp
+	<SFML/Config.hpp>
+	<basetsd.h>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/Http.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/Network/IpAddress.hpp>
+	<SFML/Network/TcpSocket.hpp>
+	<SFML/System/NonCopyable.hpp>
+	<SFML/System/Time.hpp>
+	<map>
+	<string>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/IpAddress.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/System/Time.hpp>
+	<istream>
+	<ostream>
+	<string>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/Packet.hpp
+	<SFML/Network/Export.hpp>
+	<string>
+	<vector>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/SocketSelector.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/System/Time.hpp>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/TcpListener.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/Network/Socket.hpp>
+	<SFML/Network/IpAddress.hpp>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/SFML-2.5.0/include/SFML/Network/UdpSocket.hpp
+	<SFML/Network/Export.hpp>
+	<SFML/Network/Socket.hpp>
+	<SFML/Network/IpAddress.hpp>
+	<vector>
+
+1543430340 /home/d/Documents/Pokemones/Git/SFMLgame/MazeGo/XML/rapidxml.hpp
+	<cstdlib>
+	<cassert>
+	<new>
+	<exception>
+

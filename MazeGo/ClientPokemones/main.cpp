@@ -1,10 +1,11 @@
 #include <iostream>
+#include <streambuf>
+#include <string>
+#include <vector>
 #include <jdbc/mysql_connection.h>
 #include <jdbc/mysql_driver.h>
 #include <jdbc/cppconn/resultset.h>
 #include <jdbc/cppconn/statement.h>
-#include <string>
-#include <vector>
 
 
 enum class States{MENU,INGAME,EXIT,MAX};
@@ -21,6 +22,17 @@ struct PlayerInfo
 
 };
 
+
+struct Map
+{
+    Map(std::string _id, std::string _n, std::string _d) : id(_id),name(_n), description(_d){};
+    std::string name;
+    std::string id;
+    std::string description;
+
+    std::string sessionID;
+};
+
 PlayerInfo Login(sql::Connection* conn, sql::Statement* stmt)
 {
        std::string userName;
@@ -32,7 +44,8 @@ PlayerInfo Login(sql::Connection* conn, sql::Statement* stmt)
        {
 
            std::system("clear");
-           std::cout << "Escribe el nombre de usuario o nuevo" << std::endl;
+           std::cout << "Bienvenido A Super Mega Ultra MazeGO !\nLog In: \n";
+           std::cout << "Escribe el nombre de usuario o nuevo para crear un nuevo Usuario" << std::endl;
            std::cin >> userName ;
 
            int exist;
@@ -114,7 +127,6 @@ PlayerInfo Login(sql::Connection* conn, sql::Statement* stmt)
                         {
                             std::system("clear");
                             std::cout << "Correct LOGIN ! \n\n";
-                            sleep(2);
                         }
 
                     }
@@ -151,7 +163,7 @@ try{
         std::cout << "Usuario : " << player.name << "\n";
         std::cout << "Oro : " << player.gold << "\n\n";
 
-        std::cout << "*--POKEMONS--*\n";
+        std::cout << "*--POKEMONS--*\n\n";
 
         //sql::ResultSet* res = stmt->executeQuery("SELECT * FROM Pokemon_Data , Pokemon_List Where 'Pokemon_List.PlayerID_FK' = '"+ user->getString("PlayerID") +"' and  'Pokemon_List.PokemonID_FK' = 'Pokemon_Data.PokemonID' ");
         sql::ResultSet* res = stmt->executeQuery("SELECT * FROM Pokemon_Data, Pokemon_List WHERE Pokemon_List.PlayerID_FK = '"+  player.id +"' AND Pokemon_Data.PokemonID = Pokemon_List.PokemonID_FK ");
@@ -173,11 +185,14 @@ try{
         res= nullptr;
         delete(res);
 
-        sleep(5);
+        std::cout << "\nIntro para Continuar .\n";
+        std::cin.ignore().get();
 
         States gameState = States::MENU;
 
         bool ctrl = true;
+        Map currentMap("","","");
+
         ///---*---GameLoop---*---///
         do
         {
@@ -196,32 +211,87 @@ try{
                     {
                         i++;
                         maps.push_back(res->getString("MapName"));
-                        std::cout << "* "<< i << " : " << maps[i-1] << "\n";
+                        std::cout << "* "<< i << " : " << maps[i-1] << "\n" << res->getString("MapInfo")<<"\n\n";
                     }
+
                     i++;
                     maps.push_back("Exit");
-                    std::cout << "* "<< i << " : " << maps[i-1] << "\n";
 
+                    std::cout << "* "<< i << " : " << maps[i-1] << "\n\n";
 
-                   // std::cin >> ;
-                    sleep(4);
-                    gameState == States::EXIT;
+                    std::string input;
 
+                    std::cout << "Escribe el indice del nivel para seleccionarlo\n";
+                    std::cin >> input;
+
+                    if (input.size() == 1)
+                    {
+                        for (int i = 0; i < maps.size(); i++)
+                        {
+
+                            if ((input == std::to_string(i + 1)))
+                            {
+                                input = maps[i];
+                                if (input == "Exit") gameState = States::EXIT;
+                                else
+                                {
+                                    res = stmt->executeQuery("SELECT * FROM Maps_Data WHERE MapName = '"+ input +"'");
+                                    res->next();
+                                    currentMap = Map(res->getString("MapID"), input,res->getString("MapInfo"));
+
+                                    res = nullptr;
+                                    delete(res);
+
+                                    int checkInsert = stmt->executeUpdate("INSERT INTO Sessions (PlayerID_FK, MapaID_FK, ConectionDate, DesconectionDate) VALUES  ('"+player.id+"', '"+currentMap.id+"', CURRENT_TIMESTAMP, NULL)");
+                                    if (checkInsert == 1)
+                                    {
+                                    std::cout << "godJob\n";
+                                    }
+                                    gameState = States::INGAME;
+
+                                }
+                            }
+                        }
+                    }
                 }
+
                 break;
 
                 case States::INGAME:
                 {
+                    sql::ResultSet* res = stmt->executeQuery("SELECT * FROM  Sessions WHERE PlayerID_FK = '"+ player.id +"' AND MapaID_FK = '"+ currentMap.id +"'");
 
+                    while(res->next())
+                    {
+                        if (res->getString("DesconectionDate") == "")
+                            currentMap.sessionID =res->getString("SesionID");
+
+                    };
+
+                    std::string input;
+
+                    do
+                    {
+                        std::system("clear");
+                        std::cout << "Current Map = " << currentMap.name <<  "\n\n" << currentMap.description << "\n";
+                        std::cout << "\nescribe salir para volver al menu!\n";
+
+                        std::cin >> input;
+                    }
+                    while(input != "salir");
+
+                    stmt->executeUpdate("UPDATE Sessions SET DesconectionDate = CURRENT_TIMESTAMP WHERE SesionID = '"+currentMap.sessionID+"'");
+                    gameState = States::MENU;
                 }
                 break;
                 case States::EXIT:
                 {
-                    ctrl = false;
 
                      std::system("clear");
                      std::cout << "BYEE ! \n";
                      sleep(1);
+
+                    ctrl = false;
                 }
                 break;
 
@@ -242,7 +312,7 @@ try{
 }
 catch(sql::SQLException& e)
 {
-    std::cout << "salto excepcion" << std::endl;
+    std::cout << "salto excepcion"  << e.getErrorCode() << std::endl;
 }
    return 0;
 }

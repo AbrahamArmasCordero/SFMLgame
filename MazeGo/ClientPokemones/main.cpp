@@ -211,7 +211,7 @@ try{
                     {
                         i++;
                         maps.push_back(res->getString("MapName"));
-                        std::cout << "* "<< i << " : " << maps[i-1] << "\n" << res->getString("MapInfo")<<"\n\n";
+                        std::cout << "* "<< i << " : " << maps[i-1] <<  "  |  "  << res->getString("MapInfo") << "\n";
                     }
 
                     i++;
@@ -273,7 +273,7 @@ try{
                     do
                     {
                         std::system("clear");
-                        std::cout << "Current Map = " << currentMap.name <<  "\n\n" << currentMap.description << "\n";
+                        std::cout << "Current Map = " << currentMap.name << "  |  "<< currentMap.description << "\n";
                         std::cout << "\nescribe salir para volver al menu!\n";
 
                         std::cin >> input;

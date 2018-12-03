@@ -7,6 +7,13 @@
 
 #include "GraficoSFML.h"
 
+/*
+Socket tiene parametros unicos:
+iporigen,
+ipdestino,
+portOrigen
+portDestino
+*/
 
 int main()
 {
